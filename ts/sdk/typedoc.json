@@ -1,0 +1,7 @@
+{
+  "out": "./docs",
+  "name": "merkle-drop-app",
+  "theme": "markdown",
+  "readme": "none",
+  "tsconfig": "./tsconfig.bundle.json"
+}
