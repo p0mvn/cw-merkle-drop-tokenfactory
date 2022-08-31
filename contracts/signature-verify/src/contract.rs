@@ -42,7 +42,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
-        ExecuteMsg::LazyMint { account, signature } => try_lazy_mint(deps, account, signature),
+        ExecuteMsg::LazyMint { message_hash, signature, public_key } => try_lazy_mint(deps, message_hash, signature, public_key),
     }
 }
 
@@ -66,8 +66,8 @@ pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> Result<Respons
     Ok(Response::new().add_attribute("method", "reset"))
 }
 
-pub fn try_lazy_mint(deps: DepsMut, account: Vec<u8>, signature: Vec<u8>) -> Result<Response, ContractError> {
-    let verify_result = cosmwasm_crypto::secp256k1_verify(&signature, &signature, &account);
+pub fn try_lazy_mint(deps: DepsMut, message_hash: Vec<u8>, signature: Vec<u8>, public_key: Vec<u8>) -> Result<Response, ContractError> {
+    let verify_result = cosmwasm_crypto::secp256k1_verify(&message_hash, &signature, &public_key);
 
     let is_verified = match verify_result {
         Ok(result) => result,
@@ -103,6 +103,16 @@ mod tests {
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary};
+    use sha2::{Sha256, Digest};
+    use k256::{
+        ecdsa::signature::DigestSigner, // trait
+        ecdsa::SigningKey,              // type alias
+        elliptic_curve::rand_core::OsRng,
+        elliptic_curve::sec1::ToEncodedPoint,
+        ecdsa::recoverable,
+        ecdsa::signature::{DigestVerifier, Signature as _}, // traits
+        ecdsa::{Signature, VerifyingKey},                   // type aliases
+    };
 
     #[test]
     fn proper_initialization() {
@@ -166,5 +176,40 @@ mod tests {
         let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
         let value: GetCountResponse = from_binary(&res).unwrap();
         assert_eq!(5, value.count);
+    }
+
+    #[test]
+    fn lazy_mint() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg { count: 17 };
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+
+        // Explicit / external hashing
+        const MSG: &str = "Hello World!";
+        let message_digest = Sha256::new().chain(MSG);
+        let message_hash = message_digest.clone().finalize();
+
+        // Signing
+        let secret_key = SigningKey::random(&mut OsRng); // Serialize with `::to_bytes()`
+
+        // Note: the signature type must be annotated or otherwise inferrable as
+        // `Signer` has many impls of the `Signer` trait (for both regular and
+        // recoverable signature types).
+        let signature: Signature = secret_key.sign_digest(message_digest);
+        let public_key = VerifyingKey::from(&secret_key); // Serialize with `::to_encoded_point()`
+
+
+        // beneficiary can release it
+        let info = mock_info("anyone", &coins(2, "token"));
+        let msg = ExecuteMsg::LazyMint { message_hash: message_hash.to_vec(), signature: signature.as_bytes().to_vec(), public_key: public_key.to_encoded_point(false).to_bytes().to_vec()};
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // should increase counter by 1
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
+        let value: GetCountResponse = from_binary(&res).unwrap();
+        assert_eq!(18, value.count);
     }
 }
