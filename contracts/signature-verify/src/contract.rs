@@ -1,7 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use cosmwasm_crypto::{secp256k1_verify};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -67,7 +66,7 @@ pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> Result<Respons
 }
 
 pub fn try_lazy_mint(deps: DepsMut, message_hash: Vec<u8>, signature: Vec<u8>, public_key: Vec<u8>) -> Result<Response, ContractError> {
-    let verify_result = cosmwasm_crypto::secp256k1_verify(&message_hash, &signature, &public_key);
+    let verify_result = deps.api.secp256k1_verify(&message_hash, &signature, &public_key);
 
     let is_verified = match verify_result {
         Ok(result) => result,
