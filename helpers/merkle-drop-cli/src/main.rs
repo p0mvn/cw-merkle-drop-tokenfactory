@@ -1,6 +1,9 @@
 use clap::{Parser, Subcommand};
 use std::error::Error;
-use std::process;
+use std::{process};
+
+
+mod generate_merkle_root;
 
 #[derive(Parser)]
 struct Cli {
@@ -23,13 +26,26 @@ enum Commands {
 
 fn generate_merkle_root_cmd(path: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
     // Build the CSV reader and iterate over each record.
-    let mut rdr = csv::Reader::from_path(path)?;
-    for result in rdr.records() {
+    let mut csv_reader = csv::Reader::from_path(path)?;
+
+    let mut entries: Vec<Vec<u8>> = Vec::<Vec<u8>>::new();
+
+    for str_record in csv_reader.records() {
         // The iterator yields Result<StringRecord, Error>, so we check the
         // error here.
-        let record = result?;
-        println!("{:?}", record);
+        let entry = str_record?;
+
+        entries.push(Vec::<u8>::from(entry.as_slice()));
     }
+
+    for entry in &entries {
+        if let Ok(s) = std::str::from_utf8(&entry) {
+            println!("{}", s);
+        }
+    }
+
+    let hash = generate_merkle_root::run(entries);
+    println!("{}", hash);    
     Ok(())
 }
 
