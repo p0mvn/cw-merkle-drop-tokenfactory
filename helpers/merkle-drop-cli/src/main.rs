@@ -38,12 +38,6 @@ fn generate_merkle_root_cmd(path: std::path::PathBuf) -> Result<(), Box<dyn Erro
         entries.push(Vec::<u8>::from(entry.as_slice()));
     }
 
-    for entry in &entries {
-        if let Ok(s) = std::str::from_utf8(&entry) {
-            println!("{}", s);
-        }
-    }
-
     let hash = generate_merkle_root::run(entries);
     println!("{}", hash);    
     Ok(())
