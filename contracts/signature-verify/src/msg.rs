@@ -12,8 +12,14 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Increment {},
-    Reset { count: i32 },
-    LazyMint{ message_hash: Vec<u8>, signature: Vec<u8>, public_key: Vec<u8> }
+    Reset {
+        count: i32,
+    },
+    LazyMint {
+        message_hash: Vec<u8>,
+        signature: Vec<u8>,
+        public_key: Vec<u8>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

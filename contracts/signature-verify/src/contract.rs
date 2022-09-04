@@ -41,7 +41,11 @@ pub fn execute(
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
-        ExecuteMsg::LazyMint { message_hash, signature, public_key } => try_lazy_mint(deps, message_hash, signature, public_key),
+        ExecuteMsg::LazyMint {
+            message_hash,
+            signature,
+            public_key,
+        } => try_lazy_mint(deps, message_hash, signature, public_key),
     }
 }
 
@@ -65,8 +69,15 @@ pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> Result<Respons
     Ok(Response::new().add_attribute("method", "reset"))
 }
 
-pub fn try_lazy_mint(deps: DepsMut, message_hash: Vec<u8>, signature: Vec<u8>, public_key: Vec<u8>) -> Result<Response, ContractError> {
-    let verify_result = deps.api.secp256k1_verify(&message_hash, &signature, &public_key);
+pub fn try_lazy_mint(
+    deps: DepsMut,
+    message_hash: Vec<u8>,
+    signature: Vec<u8>,
+    public_key: Vec<u8>,
+) -> Result<Response, ContractError> {
+    let verify_result = deps
+        .api
+        .secp256k1_verify(&message_hash, &signature, &public_key);
 
     let is_verified = match verify_result {
         Ok(result) => result,
@@ -74,7 +85,7 @@ pub fn try_lazy_mint(deps: DepsMut, message_hash: Vec<u8>, signature: Vec<u8>, p
     };
 
     if !is_verified {
-        return Err(ContractError::Unauthorized {  })
+        return Err(ContractError::Unauthorized {});
     }
 
     STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
@@ -102,16 +113,16 @@ mod tests {
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coins, from_binary};
-    use sha2::{Sha256, Digest};
     use k256::{
-        ecdsa::signature::DigestSigner, // trait
-        ecdsa::SigningKey,              // type alias
+        ecdsa::recoverable,
+        ecdsa::signature::DigestSigner,                     // trait
+        ecdsa::signature::{DigestVerifier, Signature as _}, // traits
+        ecdsa::SigningKey,                                  // type alias
+        ecdsa::{Signature, VerifyingKey},                   // type aliases
         elliptic_curve::rand_core::OsRng,
         elliptic_curve::sec1::ToEncodedPoint,
-        ecdsa::recoverable,
-        ecdsa::signature::{DigestVerifier, Signature as _}, // traits
-        ecdsa::{Signature, VerifyingKey},                   // type aliases
     };
+    use sha2::{Digest, Sha256};
 
     #[test]
     fn proper_initialization() {
@@ -185,7 +196,6 @@ mod tests {
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-
         // Explicit / external hashing
         const MSG: &str = "Hello World!";
         let message_digest = Sha256::new().chain(MSG);
@@ -200,10 +210,13 @@ mod tests {
         let signature: Signature = secret_key.sign_digest(message_digest);
         let public_key = VerifyingKey::from(&secret_key); // Serialize with `::to_encoded_point()`
 
-
         // beneficiary can release it
         let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::LazyMint { message_hash: message_hash.to_vec(), signature: signature.as_bytes().to_vec(), public_key: public_key.to_encoded_point(false).to_bytes().to_vec()};
+        let msg = ExecuteMsg::LazyMint {
+            message_hash: message_hash.to_vec(),
+            signature: signature.as_bytes().to_vec(),
+            public_key: public_key.to_encoded_point(false).to_bytes().to_vec(),
+        };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // should increase counter by 1
