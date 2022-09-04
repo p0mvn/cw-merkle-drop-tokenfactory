@@ -1,5 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use cosmwasm_std::{
+    Uint128,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -13,6 +16,10 @@ pub enum ExecuteMsg {
         message_hash: Vec<u8>,
         signature: Vec<u8>,
         public_key: Vec<u8>,
+    },
+    VerifyProof {
+        amount: Uint128,
+        proof: Vec<String>,
     },
 }
 

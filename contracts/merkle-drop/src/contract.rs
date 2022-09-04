@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -43,6 +43,7 @@ pub fn execute(
             signature,
             public_key,
         } => try_lazy_mint(deps, message_hash, signature, public_key),
+        ExecuteMsg::VerifyProof { amount, proof } => verify_proof(deps, amount, proof)
     }
 }
 
@@ -71,6 +72,16 @@ pub fn try_lazy_mint(
     // })?;
 
     Ok(Response::new().add_attribute("method", "try_increment"))
+}
+
+pub fn verify_proof(
+    deps: DepsMut,
+    amount: Uint128,
+    proof: Vec<String>,
+) -> Result<Response, ContractError> {
+
+
+    Ok(Response::new().add_attribute("method", "verify_proof"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
