@@ -8,7 +8,7 @@ use crate::msg::{ExecuteMsg, GetCountResponse, InstantiateMsg, QueryMsg};
 use crate::state::{State, STATE};
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:signature-verify";
+const CONTRACT_NAME: &str = "crates.io:merkle-drop";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -122,7 +122,7 @@ mod tests {
         elliptic_curve::rand_core::OsRng,
         elliptic_curve::sec1::ToEncodedPoint,
     };
-    use sha2::{Digest, Sha256};
+    use sha3::{Digest, Sha3_256};
 
     #[test]
     fn proper_initialization() {
@@ -190,38 +190,6 @@ mod tests {
 
     #[test]
     fn lazy_mint() {
-        let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // Explicit / external hashing
-        const MSG: &str = "Hello World!";
-        let message_digest = Sha256::new().chain(MSG);
-        let message_hash = message_digest.clone().finalize();
-
-        // Signing
-        let secret_key = SigningKey::random(&mut OsRng); // Serialize with `::to_bytes()`
-
-        // Note: the signature type must be annotated or otherwise inferrable as
-        // `Signer` has many impls of the `Signer` trait (for both regular and
-        // recoverable signature types).
-        let signature: Signature = secret_key.sign_digest(message_digest);
-        let public_key = VerifyingKey::from(&secret_key); // Serialize with `::to_encoded_point()`
-
-        // beneficiary can release it
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::LazyMint {
-            message_hash: message_hash.to_vec(),
-            signature: signature.as_bytes().to_vec(),
-            public_key: public_key.to_encoded_point(false).to_bytes().to_vec(),
-        };
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // should increase counter by 1
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: GetCountResponse = from_binary(&res).unwrap();
-        assert_eq!(18, value.count);
     }
 }
