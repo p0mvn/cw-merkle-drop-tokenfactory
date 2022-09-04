@@ -10,3 +10,4 @@ clap = { version = "3.0", features = ["derive"] }
 csv = "1.1"
 solana-merkle-tree = "1.11.10"
 hex = "0.4.3"
+solana-program = "1.11.10"

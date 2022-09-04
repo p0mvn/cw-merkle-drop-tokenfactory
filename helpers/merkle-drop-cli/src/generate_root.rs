@@ -1,6 +1,6 @@
 use hex;
 
-use solana_merkle_tree::{MerkleTree};
+use solana_merkle_tree::MerkleTree;
 
 pub fn run(data: Vec<Vec<u8>>) -> String {
     let merkle_tree = MerkleTree::new(&data);
