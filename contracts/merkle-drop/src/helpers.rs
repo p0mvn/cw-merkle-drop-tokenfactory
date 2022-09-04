@@ -5,7 +5,7 @@ use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, CustomQuery, Querier, QuerierWrapper, StdResult, WasmMsg, WasmQuery,
 };
 
-use crate::msg::{ExecuteMsg, GetCountResponse, QueryMsg};
+use crate::msg::{ExecuteMsg, GetMerkleRootResponse, QueryMsg};
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -28,7 +28,7 @@ impl CwTemplateContract {
     }
 
     /// Get Count
-    pub fn count<Q, T, CQ>(&self, querier: &Q) -> StdResult<GetCountResponse>
+    pub fn count<Q, T, CQ>(&self, querier: &Q) -> StdResult<GetMerkleRootResponse>
     where
         Q: Querier,
         T: Into<String>,
@@ -40,7 +40,7 @@ impl CwTemplateContract {
             msg: to_binary(&msg)?,
         }
         .into();
-        let res: GetCountResponse = QuerierWrapper::<CQ>::new(querier).query(&query)?;
+        let res: GetMerkleRootResponse = QuerierWrapper::<CQ>::new(querier).query(&query)?;
         Ok(res)
     }
 }

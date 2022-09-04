@@ -38,7 +38,7 @@ mod tests {
         let mut app = mock_app();
         let cw_template_id = app.store_code(contract_template());
 
-        let msg = InstantiateMsg { count: 1i32 };
+        let msg = InstantiateMsg { merkle_root: String::from("test") };
         let cw_template_contract_addr = app
             .instantiate_contract(
                 cw_template_id,
@@ -63,9 +63,9 @@ mod tests {
         fn count() {
             let (mut app, cw_template_contract) = proper_instantiate();
 
-            let msg = ExecuteMsg::Increment {};
-            let cosmos_msg = cw_template_contract.call(msg).unwrap();
-            app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+            // let msg = ExecuteMsg::Increment { mer };
+            // let cosmos_msg = cw_template_contract.call(msg).unwrap();
+            // app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
         }
     }
 }

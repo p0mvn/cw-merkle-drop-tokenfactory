@@ -6,7 +6,7 @@ use cw_storage_plus::Item;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
-    pub count: i32,
+    pub merkle_root: String,
     pub owner: Addr,
 }
 
