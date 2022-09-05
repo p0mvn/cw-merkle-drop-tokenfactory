@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, Coin};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -34,7 +34,7 @@ pub fn instantiate(
 pub fn execute(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
@@ -43,7 +43,7 @@ pub fn execute(
             signature,
             public_key,
         } => try_lazy_mint(deps, message_hash, signature, public_key),
-        ExecuteMsg::VerifyProof { amount, proof } => verify_proof(deps, amount, proof)
+        ExecuteMsg::VerifyProof { amount, proof } => verify_proof(deps, info, amount, proof)
     }
 }
 
@@ -76,10 +76,10 @@ pub fn try_lazy_mint(
 
 pub fn verify_proof(
     deps: DepsMut,
+    info: MessageInfo,
     amount: Uint128,
     proof: Vec<String>,
 ) -> Result<Response, ContractError> {
-
 
     Ok(Response::new().add_attribute("method", "verify_proof"))
 }
