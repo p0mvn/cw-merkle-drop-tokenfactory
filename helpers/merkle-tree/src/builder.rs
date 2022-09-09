@@ -47,7 +47,7 @@ pub fn build_branch_levels(nodes: &mut Vec<hash::Hash>) {
 
 /// TODO: spec and tests
 #[inline]
-fn get_next_level_length(level_len: usize) -> usize {
+pub fn get_next_level_length(level_len: usize) -> usize {
     if level_len == 1 {
         0
     } else {

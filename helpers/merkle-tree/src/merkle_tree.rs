@@ -50,6 +50,23 @@ impl MerkleTree {
 
         let proof_index = search_result.unwrap();
 
+        let mut level_length = self.leaf_count;
+        let mut level_start = 0; 
+        let mut current_index = proof_index;
+        let mut current_node: hash::Hash;
+
+        while level_length != 1 {
+            current_node = self.nodes[level_start + current_index];
+
+            // if index is odd, grab index - 1 for sibling
+            // if index is even, graab index + 1 for singling
+               // if level_length is odd, grab itself for sibgling
+
+            level_start += level_length;
+            level_length = builder::get_next_level_length(level_length);
+            current_index = current_index / 2;
+        }
+
     }
 
     fn get_node_count(&self) -> usize {
