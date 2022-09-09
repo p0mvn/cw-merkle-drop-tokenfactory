@@ -1,6 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, Coin};
+use cosmwasm_std::{
+    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -43,7 +45,7 @@ pub fn execute(
             signature,
             public_key,
         } => try_lazy_mint(deps, message_hash, signature, public_key),
-        ExecuteMsg::VerifyProof { amount, proof } => verify_proof(deps, info, amount, proof)
+        ExecuteMsg::VerifyProof { amount, proof } => verify_proof(deps, info, amount, proof),
     }
 }
 
@@ -80,7 +82,6 @@ pub fn verify_proof(
     amount: Uint128,
     proof: Vec<String>,
 ) -> Result<Response, ContractError> {
-
     Ok(Response::new().add_attribute("method", "verify_proof"))
 }
 
@@ -93,7 +94,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 fn query_root(deps: Deps) -> StdResult<GetMerkleRootResponse> {
     let state = STATE.load(deps.storage)?;
-    Ok(GetMerkleRootResponse { root: state.merkle_root })
+    Ok(GetMerkleRootResponse {
+        root: state.merkle_root,
+    })
 }
 
 #[cfg(test)]
@@ -109,7 +112,9 @@ mod tests {
     fn proper_initialization() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { merkle_root: String::from(TEST_ROOT) };
+        let msg = InstantiateMsg {
+            merkle_root: String::from(TEST_ROOT),
+        };
         let info = mock_info("creator", &coins(1000, "earth"));
 
         // we can just call .unwrap() to assert this was a success
