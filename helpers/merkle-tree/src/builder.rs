@@ -30,7 +30,12 @@ pub fn build_branch_levels(nodes: &mut Vec<hash::Hash>) {
         for i in 0..level_length {
             let level_index = 2 * i;
             let left_sibling = &nodes[level_start + level_index];
-            let right_sibling = &nodes[level_start + level_index + 1];
+
+            let right_sibling = if level_start + level_index == level_index {
+                &nodes[level_start + level_index] // For the case where the number of nodes at a level is odd.
+            } else {
+                &nodes[level_start + level_index + 1]
+            };
 
             let hash = hash::branch(left_sibling, right_sibling);
             nodes.push(hash);

@@ -44,7 +44,12 @@ impl MerkleTree {
 
         // binary search leaves
         let search_result = binary_search::search(&self.nodes, self.leaf_count, &hash_to_search_for);
-        if search_result.is_none() {}
+        if search_result.is_none() {
+            // TODO: return error
+        }
+
+        let proof_index = search_result.unwrap();
+
     }
 
     fn get_node_count(&self) -> usize {
@@ -287,6 +292,8 @@ mod tests {
             }
         }
     }
+
+    // TODO: add a test with 6 nodex
 
     fn sort(items: &mut Vec<&str>) {
         // We expect the constructor to sort the nodes by hash.
