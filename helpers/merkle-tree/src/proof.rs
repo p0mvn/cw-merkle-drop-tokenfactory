@@ -5,6 +5,7 @@ pub struct Entry{
     hash: hash::Hash
 }
 
+#[derive(Default)]
 pub struct Proof(Vec<Entry>);
 
 impl Proof {

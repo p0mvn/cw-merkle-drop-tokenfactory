@@ -39,15 +39,21 @@ impl MerkleTree {
         Some(root_copy)
     }
 
-    pub fn find_proof<T: AsRef<[u8]>>(&self, item: &T) -> Result<proof::Proof, &str> {
+    pub fn find_proof<T: AsRef<[u8]>>(&self, item: &T) -> Option<proof::Proof> {
+        if self.leaf_count <= 1 {
+            return None;
+        }
+
         let item_ref = item.as_ref();
         let hash_to_search_for = hash::leaf(item_ref);
 
         // binary search leaves
         let search_result = binary_search::search(&self.nodes, self.leaf_count, &hash_to_search_for);
         if search_result.is_none() {
-            // TODO: return error
+            return None;
         }
+
+        let proof = proof::Proof::default();
 
         let proof_index = search_result.unwrap();
 
@@ -68,7 +74,7 @@ impl MerkleTree {
             current_index = current_index / 2;
         }
 
-        Err("")
+        Some(proof)
 
     }
 
@@ -285,7 +291,13 @@ mod tests {
 
     #[test]
     fn find_proof_one() {
+        let items: Vec<&[u8]> = vec![test_util::OSMO];
 
+        let mt = MerkleTree::new(&items);
+
+        let result = mt.find_proof(&test_util::OSMO);
+
+        assert_eq!(true, result.is_none());
     }
 
     // #[test]
