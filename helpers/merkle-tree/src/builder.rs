@@ -6,42 +6,40 @@ pub fn build_leaf_level<T: AsRef<[u8]> + Ord>(items: &[T]) -> Vec<hash::Hash> {
     for item in items.iter() {
         let item = item.as_ref();
         let hash = hash::leaf(item);
-        nodes.push(hash);
+        nodes.push(hash)
     }
 
     // sort items so that we can binary search them
     // when finding proofs.
     pdqsort::sort_by(&mut nodes, |a, b| a.cmp(b));
 
-    // Duplicate the last entry if the number of items is odd
-    // so that each parent has 2 children, and the tree is complete.
-    if items.len() % 2 == 1 {
-        let last_hash = nodes[nodes.len() - 1];
-        nodes.push(last_hash);
-    }
-
     return nodes;
 }
 
+// build_branch_levels from nodes.
+// CONTRACT: nodes are sorted in incrasing order.
 pub fn build_branch_levels(nodes: &mut Vec<hash::Hash>) {
-    let mut level_length = get_next_level_length(nodes.len());
-    let mut level_start = 0;
-    while level_length > 0 {
-        for i in 0..level_length {
-            let level_index = 2 * i;
-            let left_sibling = &nodes[level_start + level_index];
+    let mut previous_level_length = nodes.len();
+    let mut current_level_length = get_next_level_length(previous_level_length);
+    let mut previous_level_start = 0;
+    while current_level_length > 0 {
+        for i in 0..current_level_length {
+            let previous_level_index = 2 * i;
+            let nodes_index: usize = previous_level_start +previous_level_index;
+            let left_sibling = &nodes[nodes_index];
 
-            let right_sibling = if level_start + level_index == level_index {
-                &nodes[level_start + level_index] // For the case where the number of nodes at a level is odd.
+            let right_sibling = if previous_level_index + 1 >= previous_level_length {
+                &nodes[nodes_index] // For the case where the number of nodes at a level is odd.
             } else {
-                &nodes[level_start + level_index + 1]
+                &nodes[nodes_index + 1]
             };
 
             let hash = hash::branch(left_sibling, right_sibling);
             nodes.push(hash);
         }
-        level_start = level_length * 2;
-        level_length = get_next_level_length(level_length);
+        previous_level_start += previous_level_length;
+        previous_level_length = current_level_length;
+        current_level_length = get_next_level_length(current_level_length);
     }
 }
 
@@ -75,4 +73,78 @@ fn round_up_power_of_two(n: usize) -> usize {
     v |= v >> 16;
     v += 1;
     v
+}
+
+#[cfg(test)]
+mod tests {
+    use std::vec;
+
+    use super::*;
+
+    const OSMO: &[u8] = b"osmo";
+    const ION: &[u8] = b"ion";
+    const WETH: &[u8] = b"weth";
+
+    #[test]
+    fn build_branch_level_one_node() {
+        let items: Vec<&[u8]> = vec![OSMO];
+
+        let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
+        let expected_nodes: Vec<hash::Hash> = actual_nodes.clone();
+
+        build_branch_levels(&mut actual_nodes);
+
+        validate_nodes(&expected_nodes, &actual_nodes);
+    }
+
+    #[test]
+    fn build_branch_level_two_nodes() {
+        let items: Vec<&[u8]> = vec![OSMO, ION];
+
+        let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
+
+        let mut expected_nodes: Vec<hash::Hash> = actual_nodes.clone();
+        expected_nodes.push(hash::branch(&expected_nodes[0], &expected_nodes[1]));
+
+        build_branch_levels(&mut actual_nodes);
+
+        validate_nodes(&expected_nodes, &actual_nodes);
+    }
+
+    #[test]
+    fn build_branch_level_three_nodes() {
+        let items: Vec<&[u8]> = vec![OSMO, ION, WETH];
+
+        let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
+
+        let mut expected_nodes: Vec<hash::Hash> = actual_nodes.clone();
+        expected_nodes.push(hash::branch(&expected_nodes[0], &expected_nodes[1]));
+        expected_nodes.push(hash::branch(&expected_nodes[2], &expected_nodes[2]));
+        expected_nodes.push(hash::branch(&expected_nodes[3], &expected_nodes[4]));
+
+        build_branch_levels(&mut actual_nodes);
+
+        validate_nodes(&expected_nodes, &actual_nodes);
+    }
+
+    fn sort(items: &mut Vec<hash::Hash>) {
+        // We expect the constructor to sort the nodes by hash.
+        pdqsort::sort_by(items, |a, b| {
+            a.cmp(b)
+        });
+    }
+
+    fn prepare_leaf_nodes(items: &Vec<&[u8]>) -> Vec<hash::Hash> {
+        let mut actual_nodes: Vec<hash::Hash> = items.into_iter().map(|i| hash::leaf(i)).rev().collect();
+
+        sort(&mut actual_nodes);
+        return  actual_nodes;
+    }
+    
+    fn validate_nodes(expected_nodes: &Vec<hash::Hash>, actual_nodes: &Vec<hash::Hash>) {
+        assert_eq!(expected_nodes.len(), actual_nodes.len());
+        for i in 0..actual_nodes.len() {
+            assert_eq!(expected_nodes[i], actual_nodes[i], "index {}", i);
+        }
+    }
 }

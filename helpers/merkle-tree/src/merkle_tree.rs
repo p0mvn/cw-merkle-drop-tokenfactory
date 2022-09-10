@@ -139,31 +139,14 @@ mod tests {
         let root = mt.get_root();
 
         assert_eq!(true, root.is_some());
-        assert_eq!(2, mt.get_leaf_count().unwrap());
-        assert_eq!(3, mt.get_node_count());
+        assert_eq!(1, mt.get_leaf_count().unwrap());
+        assert_eq!(1, mt.get_node_count());
 
         // TODO: extra this into helper and clean up tests
         match mt.get_node_at(0) {
             Ok(result) => {
                 assert_eq!(hash::leaf(OSMO), result);
-            }
-            Err(error) => {
-                panic!("must have returned result but received error {:?}", error)
-            }
-        }
-
-        match mt.get_node_at(1) {
-            Ok(result) => {
-                assert_eq!(hash::leaf(OSMO), result);
-            }
-            Err(error) => {
-                panic!("must have returned result but received error {:?}", error)
-            }
-        }
-
-        match mt.get_node_at(2) {
-            Ok(result) => {
-                assert_eq!(hash::branch(&hash::leaf(OSMO), &hash::leaf(OSMO)), result);
+                assert_eq!(root.unwrap(), result);
             }
             Err(error) => {
                 panic!("must have returned result but received error {:?}", error)
@@ -227,8 +210,8 @@ mod tests {
         let root = mt.get_root();
 
         assert_eq!(true, root.is_some());
-        assert_eq!(4, mt.get_leaf_count().unwrap());
-        assert_eq!(7, mt.get_node_count());
+        assert_eq!(3, mt.get_leaf_count().unwrap());
+        assert_eq!(6, mt.get_node_count());
 
         match mt.get_node_at(0) {
             Ok(result) => {
@@ -259,15 +242,6 @@ mod tests {
 
         match mt.get_node_at(3) {
             Ok(result) => {
-                assert_eq!(hash::leaf(items[2].as_bytes()), result);
-            }
-            Err(error) => {
-                panic!("must have returned result but received error {:?}", error)
-            }
-        }
-
-        match mt.get_node_at(4) {
-            Ok(result) => {
                 let left_hash: hash::Hash = hash::leaf(items[0].as_bytes());
                 let right_hash: hash::Hash = hash::leaf(items[1].as_bytes());
                 assert_eq!(hash::branch(&left_hash, &right_hash), result);
@@ -277,7 +251,7 @@ mod tests {
             }
         }
 
-        match mt.get_node_at(5) {
+        match mt.get_node_at(4) {
             Ok(result) => {
                 let left_hash: hash::Hash = hash::leaf(items[2].as_bytes());
                 let right_hash: hash::Hash = hash::leaf(items[2].as_bytes());
@@ -288,8 +262,10 @@ mod tests {
             }
         }
 
-        match mt.get_node_at(6) {
+        match mt.get_node_at(5) {
             Ok(result) => {
+                assert_eq!(mt.get_root().unwrap(), result);
+
                 let left_left_hash: hash::Hash = hash::leaf(items[0].as_bytes());
                 let left_right_hash: hash::Hash = hash::leaf(items[1].as_bytes());
 
