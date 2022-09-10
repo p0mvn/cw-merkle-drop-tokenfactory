@@ -1,7 +1,7 @@
 use crate::hash;
 
 /// TODO: spec and tests
-pub fn build_leaf_level<T: AsRef<[u8]> + Ord>(items: &[T]) -> Vec<hash::Hash> {
+pub fn build_leaf_level<T: AsRef<[u8]>>(items: &[T]) -> Vec<hash::Hash> {
     let mut nodes: Vec<hash::Hash> = Vec::with_capacity(calculate_tree_capacity(items));
     for item in items.iter() {
         let item = item.as_ref();

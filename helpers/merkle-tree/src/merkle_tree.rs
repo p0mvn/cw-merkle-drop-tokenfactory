@@ -9,7 +9,7 @@ pub struct MerkleTree {
 }
 
 impl MerkleTree {
-    pub fn new<T: AsRef<[u8]> + Ord>(items: &[T]) -> Self {
+    pub fn new<T: AsRef<[u8]>>(items: &[T]) -> Self {
         if items.len() == 0 {
             return MerkleTree {
                 leaf_count: 0,
