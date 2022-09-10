@@ -16,7 +16,8 @@ pub fn build_leaf_level<T: AsRef<[u8]>>(items: &[T]) -> Vec<hash::Hash> {
     return nodes;
 }
 
-// build_branch_levels from nodes.
+// build_branch_levels builds branch levels from the give leaf nodes.
+// mutates the parameter by pushing the new nodes onto it.
 // CONTRACT: nodes are sorted in incrasing order.
 pub fn build_branch_levels(nodes: &mut Vec<hash::Hash>) {
     let mut previous_level_length = nodes.len();
@@ -78,18 +79,13 @@ fn round_up_power_of_two(n: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use std::vec;
+    use crate::merkle_tree::test_util;
 
     use super::*;
 
-    const OSMO: &[u8] = b"osmo";
-    const ION: &[u8] = b"ion";
-    const WETH: &[u8] = b"weth";
-    const USDC: &[u8] = b"usdc";
-    const AKT: &[u8] = b"akt";
-
     #[test]
     fn build_branch_level_one_node() {
-        let items: Vec<&[u8]> = vec![OSMO];
+        let items: Vec<&[u8]> = vec![test_util::OSMO];
 
         let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
         let expected_nodes: Vec<hash::Hash> = actual_nodes.clone();
@@ -101,7 +97,7 @@ mod tests {
 
     #[test]
     fn build_branch_level_two_nodes() {
-        let items: Vec<&[u8]> = vec![OSMO, ION];
+        let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::ION];
 
         let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
 
@@ -115,7 +111,7 @@ mod tests {
 
     #[test]
     fn build_branch_level_three_nodes() {
-        let items: Vec<&[u8]> = vec![OSMO, ION, WETH];
+        let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::ION, test_util::WETH];
 
         let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
 
@@ -131,7 +127,7 @@ mod tests {
 
     #[test]
     fn build_branch_level_five_nodes() {
-        let items: Vec<&[u8]> = vec![OSMO, ION, WETH, USDC, AKT];
+        let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::ION, test_util::WETH, test_util::USDC, test_util::AKT];
 
         let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
 
@@ -153,17 +149,10 @@ mod tests {
         validate_nodes(&expected_nodes, &actual_nodes);
     }
 
-    fn sort(items: &mut Vec<hash::Hash>) {
-        // We expect the constructor to sort the nodes by hash.
-        pdqsort::sort_by(items, |a, b| {
-            a.cmp(b)
-        });
-    }
-
     fn prepare_leaf_nodes(items: &Vec<&[u8]>) -> Vec<hash::Hash> {
         let mut actual_nodes: Vec<hash::Hash> = items.into_iter().map(|i| hash::leaf(i)).rev().collect();
 
-        sort(&mut actual_nodes);
+        test_util::sort(&mut actual_nodes);
         return  actual_nodes;
     }
     
