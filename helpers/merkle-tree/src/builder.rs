@@ -84,6 +84,8 @@ mod tests {
     const OSMO: &[u8] = b"osmo";
     const ION: &[u8] = b"ion";
     const WETH: &[u8] = b"weth";
+    const USDC: &[u8] = b"usdc";
+    const AKT: &[u8] = b"akt";
 
     #[test]
     fn build_branch_level_one_node() {
@@ -121,6 +123,30 @@ mod tests {
         expected_nodes.push(hash::branch(&expected_nodes[0], &expected_nodes[1]));
         expected_nodes.push(hash::branch(&expected_nodes[2], &expected_nodes[2]));
         expected_nodes.push(hash::branch(&expected_nodes[3], &expected_nodes[4]));
+
+        build_branch_levels(&mut actual_nodes);
+
+        validate_nodes(&expected_nodes, &actual_nodes);
+    }
+
+    #[test]
+    fn build_branch_level_five_nodes() {
+        let items: Vec<&[u8]> = vec![OSMO, ION, WETH, USDC, AKT];
+
+        let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
+
+        let mut expected_nodes: Vec<hash::Hash> = actual_nodes.clone();
+        // level 3
+        expected_nodes.push(hash::branch(&expected_nodes[0], &expected_nodes[1]));
+        expected_nodes.push(hash::branch(&expected_nodes[2], &expected_nodes[3]));
+        expected_nodes.push(hash::branch(&expected_nodes[4], &expected_nodes[4]));
+
+        // level 2
+        expected_nodes.push(hash::branch(&expected_nodes[5], &expected_nodes[6]));
+        expected_nodes.push(hash::branch(&expected_nodes[7], &expected_nodes[7]));
+
+        // level 1
+        expected_nodes.push(hash::branch(&expected_nodes[8], &expected_nodes[9]));
 
         build_branch_levels(&mut actual_nodes);
 
