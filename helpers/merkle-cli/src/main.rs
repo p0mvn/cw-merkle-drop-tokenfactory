@@ -18,7 +18,7 @@ enum Commands {
     /// the first column must be an address and second column is an amount
     /// in cosmos-sdk Coin string format.
     /// prints the root hash to stdout, hex encoded.
-    GenerateMerkleRoot {
+    GenerateRoot {
         /// The path to the file with accounts and amounts in csv format.
         /// See example in testdata.
         #[clap(parse(from_os_str))]
@@ -66,10 +66,8 @@ fn parse_csv(path: std::path::PathBuf) -> Result<Vec<Vec<u8>>, Box<dyn Error>> {
 fn main() {
     let cli = Cli::parse();
 
-    // You can check for the existence of subcommands, and if found use their
-    // matches just as you would the top level cmd
     match &cli.command {
-        Some(Commands::GenerateMerkleRoot { path }) => {
+        Some(Commands::GenerateRoot { path }) => {
             if let Err(err) = generate_merkle_root_cmd(path.to_path_buf()) {
                 println!("error generating merkle root: {}", err);
                 process::exit(1);

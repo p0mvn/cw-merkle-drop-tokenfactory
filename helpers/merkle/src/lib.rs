@@ -89,10 +89,12 @@ impl Tree {
         Some(proof)
     }
 
+    #[allow(dead_code)]
     fn get_node_count(&self) -> usize {
         return self.nodes.len();
     }
 
+    #[allow(dead_code)]
     fn get_leaf_count(&self) -> Result<usize, String> {
         if self.leaf_count > self.get_node_count() {
             return Err(format!(
@@ -104,6 +106,7 @@ impl Tree {
         return Ok(self.leaf_count);
     }
 
+    #[allow(dead_code)]
     fn get_node_at(&self, index: usize) -> Result<hash::Hash, String> {
         if index >= self.get_node_count() {
             return Err(format!(
