@@ -1,6 +1,6 @@
 mod binary_search;
 mod builder;
-mod hash;
+pub mod hash;
 pub mod proof;
 
 #[derive(Debug)]

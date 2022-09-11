@@ -28,7 +28,7 @@ impl AsRef<[u8]> for Hash {
 }
 
 #[derive(Clone, Default)]
-pub struct Hasher {
+struct Hasher {
     hasher: Sha3_256,
 }
 

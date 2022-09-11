@@ -44,6 +44,12 @@ enum Commands {
         #[clap(short, long)]
         print: bool,
     },
+
+    Hash {
+        /// The data to hash and print.
+        #[clap()]
+        data: String,
+    }
 }
 
 fn generate_root_cmd(path: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
@@ -69,6 +75,11 @@ fn generate_proof_cmd(path: std::path::PathBuf, proof_for: &String, proof_out_pa
     Ok(())
 }
 
+fn hash_cmd(data: &String) {
+    let hash = controller::hash(data);
+    println!("{}", hash);
+}
+
 fn parse_csv(path: std::path::PathBuf) -> Result<Vec<Vec<u8>>, Box<dyn Error>> {
     // Build the CSV reader and iterate over each record.
     let mut csv_reader = csv::Reader::from_path(path)?;
@@ -91,20 +102,28 @@ fn main() {
     match &cli.command {
         Some(Commands::GenerateRoot { path }) => {
             if let Err(err) = generate_root_cmd(path.to_path_buf()) {
-                println!("error generating merkle root: {}", err);
+                eprintln!("error generating merkle root: {}", err);
                 process::exit(1);
             }
         }
         Some(Commands::GenerateProof { data_set_path: path, proof_for: data, proof_out_path, print }) => {
             if proof_out_path.is_none() && !print {
-                println!("please provide a proof_out_path argument or set --print flag to true");
+                eprintln!("please provide a proof_out_path argument or set --print flag to true");
                 process::exit(1);
             }
             
             if let Err(err) = generate_proof_cmd(path.to_path_buf(), data, proof_out_path, *print) {
-                println!("error generating merkle proof: {}", err);
+                eprintln!("error generating merkle proof: {}", err);
                 process::exit(1);
             }
+        }
+        Some(Commands::Hash { data }) => {
+            if data.len() == 0 {
+                eprintln!("data was empty, please provide something to hash");
+                process::exit(1);
+            }
+
+            hash_cmd(data)
         }
         None => {}
     }
