@@ -407,7 +407,7 @@ mod tests {
 
     #[test]
     fn find_proof_five_items_left_last_node_found() {
-        // N.B.: Please see previous tree for the visualization.
+        // N.B.: Please see previous test for the visualization.
         // The same tree is used while requesting for a different node.
 
         let items: Vec<&[u8]> = vec![
