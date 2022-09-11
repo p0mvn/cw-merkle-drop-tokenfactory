@@ -13,13 +13,13 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// generates merkle root from file consisting of accounts and
+    /// GenerateRoot generates merkle root from file consisting of accounts and
     /// amounts in csv format at a given path
     /// the first column must be an address and second column is an amount
     /// in cosmos-sdk Coin string format.
     /// prints the root hash to stdout, hex encoded.
     GenerateRoot {
-        /// The path to the file with accounts and amounts in csv format.
+        /// path the path to the file with accounts and amounts in csv format.
         /// See example in testdata.
         #[clap(parse(from_os_str))]
         path: std::path::PathBuf,
@@ -33,25 +33,28 @@ enum Commands {
     /// In that case, the result is produced to stdout.
     /// One of proof_out_path argument or print flag must be present. 
     GenerateProof {
-        /// The path to the file with accounts and amounts in csv format.
+        /// data_set_path the path to the file with accounts and amounts in csv format.
         /// See example in testdata.
         #[clap(parse(from_os_str))]
         data_set_path: std::path::PathBuf,
 
-        /// The data to generate proof for.
+        /// proof_for the data to generate proof for.
         #[clap()]
         proof_for: String,
 
         #[clap(parse(from_os_str))]
         proof_out_path:  Option<std::path::PathBuf>,
 
-        /// Flag indicating whether to print the proof.
+        /// print flag indicating whether to print the proof.
         /// It is written to file by default.
         /// If this flag is true 
         #[clap(short, long)]
         print: bool,
     },
 
+    /// Hash hashes the given data with the same hasher as
+    /// is used in the underlying Merkle tree.  Outputs the result to stdout.\
+    /// Primarily used for debugging purposes and has no production use case.
     Hash {
         /// The data to hash and print.
         #[clap()]
@@ -126,7 +129,7 @@ fn main() {
                 process::exit(1);
             }
         }
-        Some(Commands::Hash { data }) => {
+        Some(Commands::Hash { data,  }) => {
             if data.len() == 0 {
                 eprintln!("data was empty, please provide something to hash");
                 process::exit(1);
