@@ -1,8 +1,19 @@
 use crate::hash;
 
-pub struct Entry{
-    is_left_sibling: bool,
-    hash: hash::Hash
+#[derive(PartialEq, Debug)]
+pub struct Entry {
+    pub is_left_sibling: bool,
+    pub hash: hash::Hash,
+}
+
+impl Entry {
+    pub fn new(is_left_sibling: bool, hash: hash::Hash) -> Self {
+        let entry = Entry {
+            is_left_sibling: is_left_sibling,
+            hash: hash,
+        };
+        entry
+    }
 }
 
 #[derive(Default)]
@@ -10,9 +21,9 @@ pub struct Proof(Vec<Entry>);
 
 impl Proof {
     pub fn push(&mut self, is_left_sibling: bool, hash: hash::Hash) {
-        self.0.push(Entry{
+        self.0.push(Entry {
             is_left_sibling: is_left_sibling,
-            hash: hash
+            hash: hash,
         })
     }
 
@@ -34,6 +45,12 @@ impl Proof {
 
         return result.unwrap().eq(root);
     }
+
+    pub fn get_entry_at(&self, index: usize) -> &Entry {
+        return &self.0[index];
+    }
+
+    pub fn get_num_entries(&self) -> usize {
+        return self.0.len();
+    }
 }
-
-

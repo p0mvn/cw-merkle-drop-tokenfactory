@@ -1,6 +1,6 @@
-use crate::hash;
 use crate::binary_search;
 use crate::builder;
+use crate::hash;
 use crate::proof;
 
 #[derive(Debug)]
@@ -48,26 +48,38 @@ impl MerkleTree {
         let hash_to_search_for = hash::leaf(item_ref);
 
         // binary search leaves
-        let search_result = binary_search::search(&self.nodes, self.leaf_count, &hash_to_search_for);
+        let search_result =
+            binary_search::search(&self.nodes, self.leaf_count, &hash_to_search_for);
         if search_result.is_none() {
             return None;
         }
 
-        let proof = proof::Proof::default();
+        let mut proof = proof::Proof::default();
 
         let proof_index = search_result.unwrap();
 
         let mut level_length = self.leaf_count;
-        let mut level_start = 0; 
+        let mut level_start = 0;
         let mut current_index = proof_index;
-        let mut current_node: hash::Hash;
+
+        let mut sibling_hash: hash::Hash;
+        let mut is_left_sibling: bool;
 
         while level_length != 1 {
-            current_node = self.nodes[level_start + current_index];
+            is_left_sibling = current_index % 2 == 1;
+            if is_left_sibling {
+                // if current_index node is on the right, we need its left sibling
+                sibling_hash = self.nodes[level_start + current_index - 1];
+            } else if current_index + 1 == level_length {
+                // if current_index node is on the left but there is no right sibling
+                // grab itself for proof.
+                sibling_hash = self.nodes[level_start + current_index];
+            } else {
+                // current_index node is on the left, grab its right sibling
+                sibling_hash = self.nodes[level_start + current_index + 1];
+            }
 
-            // if index is odd, grab index - 1 for sibling
-            // if index is even, graab index + 1 for singling
-               // if level_length is odd, grab itself for sibgling
+            proof.push(is_left_sibling, sibling_hash);
 
             level_start += level_length;
             level_length = builder::get_next_level_length(level_length);
@@ -75,7 +87,6 @@ impl MerkleTree {
         }
 
         Some(proof)
-
     }
 
     fn get_node_count(&self) -> usize {
@@ -108,6 +119,8 @@ impl MerkleTree {
 #[cfg(test)]
 mod tests {
     use std::vec;
+
+    use crate::proof::Entry;
 
     use super::*;
 
@@ -159,7 +172,7 @@ mod tests {
 
     #[test]
     fn new_merkle_tree_two_elements() {
-        let mut items:Vec<&[u8]> = vec![test_util::OSMO, test_util::ION];
+        let mut items: Vec<&[u8]> = vec![test_util::OSMO, test_util::ION];
 
         let mt = MerkleTree::new(&items);
 
@@ -279,7 +292,10 @@ mod tests {
                 let right_right_hash: hash::Hash = hash::leaf(items[2]);
 
                 let right_hash: hash::Hash = hash::branch(&right_left_hash, &right_right_hash);
-                assert_eq!(hash::branch(&right_left_hash, &right_right_hash), right_hash);
+                assert_eq!(
+                    hash::branch(&right_left_hash, &right_right_hash),
+                    right_hash
+                );
 
                 assert_eq!(hash::branch(&left_hash, &right_hash), result);
             }
@@ -300,35 +316,169 @@ mod tests {
         assert_eq!(true, result.is_none());
     }
 
-    // #[test]
-    // fn find_proof_two() {
+    #[test]
+    fn find_proof_two_items_found() {
+        // N.B.: SHA3_256 lexicographical byte order is: hash(OSMO), hash(WETH).
+        let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::WETH];
 
-    // }
+        let mt = MerkleTree::new(&items);
 
+        let result = mt.find_proof(&test_util::WETH);
 
+        assert_eq!(false, result.is_none());
+
+        let actual_proof = result.unwrap();
+
+        let actual_entry = actual_proof.get_entry_at(0);
+
+        assert_eq!(1, actual_proof.get_num_entries());
+        assert_eq!(Entry::new(true, hash::leaf(test_util::OSMO)), *actual_entry);
+    }
+
+    #[test]
+    fn find_proof_two_items_not_found() {
+        // N.B.: SHA3_256 lexicographical byte order is: hash(OSMO), hash(WETH).
+        let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::WETH];
+
+        let mt = MerkleTree::new(&items);
+
+        let result = mt.find_proof(&test_util::ION);
+
+        assert_eq!(true, result.is_none());
+    }
+
+    #[test]
+    fn find_proof_five_items_right_found() {
+        // N.B.: SHA3_256 lexicographical byte order is the following:
+        // - hash(OSMO)
+        // - hash(USDC)
+        // - hash(ION)
+        // - hash(AKT)
+        // - hash(WETH)
+        // Therefore the tree should be the following:
+        //
+        //                                                            root: hash(B_4, B_5)
+        //
+        //                               B_4: hash(B_0, B_1)                                          B_5: hash(B_3, B_3)
+        //
+        //   B_0: hash(hash(OSMO), hash(USDC))           B_1: hash(hash(ION), hash(AKT))      B_3: hash(hash(WETH), hash(WETH))    B_3
+        //
+        //     hash(OSMO) hash(USDC)                     hash(ION) hash(AKT)                      hash(WETH)
+        let items: Vec<&[u8]> = vec![
+            test_util::OSMO,
+            test_util::ION,
+            test_util::WETH,
+            test_util::USDC,
+            test_util::AKT,
+        ];
+
+        let mt = MerkleTree::new(&items);
+
+        let result = mt.find_proof(&test_util::ION);
+
+        assert_eq!(false, result.is_none());
+
+        let actual_proof = result.unwrap();
+
+        assert_eq!(3, actual_proof.get_num_entries());
+
+        assert_eq!(
+            Entry::new(false, hash::leaf(test_util::AKT)),
+            *actual_proof.get_entry_at(0)
+        );
+
+        assert_eq!(
+            Entry::new(
+                true,
+                hash::branch(&hash::leaf(test_util::OSMO), &hash::leaf(test_util::USDC))  // B_0
+            ),
+            *actual_proof.get_entry_at(1)
+        );
+
+        let b_3 = hash::branch(&hash::leaf(test_util::WETH), &hash::leaf(test_util::WETH));
+        assert_eq!(
+            Entry::new(
+                false,
+                hash::branch(&b_3, &b_3) // B_5
+            ),
+            *actual_proof.get_entry_at(2)
+        );
+    }
+
+    #[test]
+    fn find_proof_five_items_left_last_node_found() {
+        // N.B.: Please see previous tree for the visualization.
+        // The same tree is used while requesting for a different node.
+
+        let items: Vec<&[u8]> = vec![
+            test_util::OSMO,
+            test_util::ION,
+            test_util::WETH,
+            test_util::USDC,
+            test_util::AKT,
+        ];
+
+        let mt = MerkleTree::new(&items);
+
+        let result = mt.find_proof(&test_util::WETH);
+
+        assert_eq!(false, result.is_none());
+
+        let actual_proof = result.unwrap();
+
+        assert_eq!(3, actual_proof.get_num_entries());
+
+        assert_eq!(
+            Entry::new(false, hash::leaf(test_util::WETH)),
+            *actual_proof.get_entry_at(0)
+        );
+
+        assert_eq!(
+            Entry::new(
+                false,
+                hash::branch(&hash::leaf(test_util::WETH), &hash::leaf(test_util::WETH))  // B_0
+            ),
+            *actual_proof.get_entry_at(1)
+        );
+
+        assert_eq!(
+            Entry::new(
+                true,
+                hash::branch(
+                    &hash::branch(
+                        &hash::leaf(test_util::OSMO), 
+                        &hash::leaf(test_util::USDC)), 
+                    &hash::branch(
+                        &hash::leaf(test_util::ION),
+                        &hash::leaf(test_util::AKT))) // B_4
+            ),
+            *actual_proof.get_entry_at(2)
+        );
+    }
 }
 
 #[cfg(test)]
 pub mod test_util {
     use super::*;
 
+    // Hashes to: {155, 130, 51, 5, 37, 74, 205, 223, ...}
     pub const OSMO: &[u8] = b"osmo";
+    // Hashes to: {184, 142, 37, 50, 165, 100, 87, 208, ...}
     pub const ION: &[u8] = b"ion";
+    // Hashes to: {248, 118, 160, 140, 119, 75, 115, ...}
     pub const WETH: &[u8] = b"weth";
+    // Hashes to: {173, 151, 188, 10, 157, 161, 47, 157, ...}
     pub const USDC: &[u8] = b"usdc";
+    // Hashes to: {222, 232, 28, 167, 68, 180, 84, 72, ...}
     pub const AKT: &[u8] = b"akt";
 
     pub fn hash_and_sort(items: &mut Vec<&[u8]>) {
         // We expect the constructor to sort the nodes by hash.
-        pdqsort::sort_by(items, |a, b| {
-            hash::leaf(a).cmp(&hash::leaf(b))
-        });
+        pdqsort::sort_by(items, |a, b| hash::leaf(a).cmp(&hash::leaf(b)));
     }
 
     pub fn sort(items: &mut Vec<hash::Hash>) {
         // We expect the constructor to sort the nodes by hash.
-        pdqsort::sort_by(items, |a, b| {
-            a.cmp(b)
-        });
+        pdqsort::sort_by(items, |a, b| a.cmp(b));
     }
 }

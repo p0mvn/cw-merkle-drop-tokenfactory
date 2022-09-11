@@ -1,3 +1,5 @@
+use std::fmt;
+
 use sha3::{Digest, Sha3_256};
 
 // The distinction in prefixes is needed
@@ -9,9 +11,14 @@ const BRANCH_NODE_PREFIX: &[u8] = &[1];
 
 pub const HASH_BYTES: usize = 32;
 
-
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 pub struct Hash(pub(crate) [u8; HASH_BYTES]);
+
+impl fmt::Display for Hash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
 
 impl AsRef<[u8]> for Hash {
     fn as_ref(&self) -> &[u8] {

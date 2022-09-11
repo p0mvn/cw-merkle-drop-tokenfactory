@@ -1,4 +1,3 @@
-
 /*
 search search for item in the given first number of elements
 within items

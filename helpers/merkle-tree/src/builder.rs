@@ -26,7 +26,7 @@ pub fn build_branch_levels(nodes: &mut Vec<hash::Hash>) {
     while current_level_length > 0 {
         for i in 0..current_level_length {
             let previous_level_index = 2 * i;
-            let nodes_index: usize = previous_level_start +previous_level_index;
+            let nodes_index: usize = previous_level_start + previous_level_index;
             let left_sibling = &nodes[nodes_index];
 
             let right_sibling = if previous_level_index + 1 >= previous_level_length {
@@ -78,8 +78,8 @@ fn round_up_power_of_two(n: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
     use crate::merkle_tree::test_util;
+    use std::vec;
 
     use super::*;
 
@@ -127,7 +127,13 @@ mod tests {
 
     #[test]
     fn build_branch_level_five_nodes() {
-        let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::ION, test_util::WETH, test_util::USDC, test_util::AKT];
+        let items: Vec<&[u8]> = vec![
+            test_util::OSMO,
+            test_util::ION,
+            test_util::WETH,
+            test_util::USDC,
+            test_util::AKT,
+        ];
 
         let mut actual_nodes: Vec<hash::Hash> = prepare_leaf_nodes(&items);
 
@@ -150,12 +156,13 @@ mod tests {
     }
 
     fn prepare_leaf_nodes(items: &Vec<&[u8]>) -> Vec<hash::Hash> {
-        let mut actual_nodes: Vec<hash::Hash> = items.into_iter().map(|i| hash::leaf(i)).rev().collect();
+        let mut actual_nodes: Vec<hash::Hash> =
+            items.into_iter().map(|i| hash::leaf(i)).rev().collect();
 
         test_util::sort(&mut actual_nodes);
-        return  actual_nodes;
+        return actual_nodes;
     }
-    
+
     fn validate_nodes(expected_nodes: &Vec<hash::Hash>, actual_nodes: &Vec<hash::Hash>) {
         assert_eq!(expected_nodes.len(), actual_nodes.len());
         for i in 0..actual_nodes.len() {
