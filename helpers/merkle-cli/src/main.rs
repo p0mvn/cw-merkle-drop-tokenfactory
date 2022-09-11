@@ -77,7 +77,9 @@ fn generate_proof_cmd(path: std::path::PathBuf, proof_for: &String, proof_out_pa
 
 fn hash_cmd(data: &String) {
     let hash = controller::hash(data);
-    println!("{}", hash);
+    println!("Data: {}", data);
+    println!("Data Bytes: {:?}", data.as_bytes());
+    println!("Data Hash: {}", hash);
 }
 
 fn parse_csv(path: std::path::PathBuf) -> Result<Vec<Vec<u8>>, Box<dyn Error>> {
