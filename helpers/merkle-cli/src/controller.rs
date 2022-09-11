@@ -1,15 +1,15 @@
-use hex;
+use base64;
 
-use serde_json;
-use merkle::Tree;
 use merkle::hash;
+use merkle::Tree;
+use serde_json;
 use std::error::Error;
 
-pub fn run(data: &Vec<Vec<u8>>) -> String {
+pub fn generate_root(data: &Vec<Vec<u8>>) -> String {
     let tree = Tree::new(data);
     let hash = tree.get_root().unwrap();
 
-    return hex::encode(hash);
+    return base64::encode(hash);
 }
 
 pub fn get_proof(data: &Vec<Vec<u8>>, proof_for: &Vec<u8>) -> Result<String, Box<dyn Error>> {
@@ -18,7 +18,12 @@ pub fn get_proof(data: &Vec<Vec<u8>>, proof_for: &Vec<u8>) -> Result<String, Box
     let proof_opt = tree.find_proof(proof_for);
 
     if proof_opt.is_none() {
-       return Err(format!("failed to find proof for {:?}, the data hash is {:?}", proof_for, hash::leaf(proof_for)).into());
+        return Err(format!(
+            "failed to find proof for {:?}, the data hash is {:?}",
+            proof_for,
+            hash::leaf(proof_for)
+        )
+        .into());
     }
 
     let proof = proof_opt.unwrap();
@@ -26,6 +31,15 @@ pub fn get_proof(data: &Vec<Vec<u8>>, proof_for: &Vec<u8>) -> Result<String, Box
     let serialized = serde_json::to_string(&proof)?;
 
     Ok(serialized)
+}
+
+pub fn verify_proof(root: &String, proof_data: &String) -> Result<bool, Box<dyn Error>> {
+    let proof: merkle::proof::Proof = serde_json::from_str(&proof_data)?;
+    let root_hash = base64::decode(root)?;
+
+    // proof.verify(data, root)
+
+    Ok(true)
 }
 
 pub fn hash(data: &String) -> String {

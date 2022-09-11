@@ -393,7 +393,7 @@ mod tests {
         assert_eq!(
             Entry::new(
                 true,
-                hash::branch(&hash::leaf(test_util::OSMO), &hash::leaf(test_util::USDC))  // B_0
+                hash::branch(&hash::leaf(test_util::OSMO), &hash::leaf(test_util::USDC)) // B_0
             ),
             *actual_proof.get_entry_at(1)
         );
@@ -439,7 +439,7 @@ mod tests {
         assert_eq!(
             Entry::new(
                 false,
-                hash::branch(&hash::leaf(test_util::WETH), &hash::leaf(test_util::WETH))  // B_0
+                hash::branch(&hash::leaf(test_util::WETH), &hash::leaf(test_util::WETH)) // B_0
             ),
             *actual_proof.get_entry_at(1)
         );
@@ -448,12 +448,9 @@ mod tests {
             Entry::new(
                 true,
                 hash::branch(
-                    &hash::branch(
-                        &hash::leaf(test_util::OSMO), 
-                        &hash::leaf(test_util::USDC)), 
-                    &hash::branch(
-                        &hash::leaf(test_util::ION),
-                        &hash::leaf(test_util::AKT))) // B_4
+                    &hash::branch(&hash::leaf(test_util::OSMO), &hash::leaf(test_util::USDC)),
+                    &hash::branch(&hash::leaf(test_util::ION), &hash::leaf(test_util::AKT))
+                ) // B_4
             ),
             *actual_proof.get_entry_at(2)
         );
