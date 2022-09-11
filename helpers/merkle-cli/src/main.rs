@@ -25,6 +25,13 @@ enum Commands {
         path: std::path::PathBuf,
     },
 
+
+    /// GenerateProof generates a Merkle proof for 
+    /// proof_for parameter if it is present in the data set given by
+    /// data_set_path. By default, requires a proof_out_path to output
+    /// data to. Instead, user has an option to provide a --print flag
+    /// In that case, the result is produced to stdout.
+    /// One of proof_out_path argument or print flag must be present. 
     GenerateProof {
         /// The path to the file with accounts and amounts in csv format.
         /// See example in testdata.
