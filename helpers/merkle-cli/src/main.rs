@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use std::error::Error;
+use std::fs;
 use std::process;
 
 mod controller;
@@ -28,11 +29,20 @@ enum Commands {
         /// The path to the file with accounts and amounts in csv format.
         /// See example in testdata.
         #[clap(parse(from_os_str))]
-        path: std::path::PathBuf,
+        data_set_path: std::path::PathBuf,
 
         /// The data to generate proof for.
         #[clap()]
-        data: String,
+        proof_for: String,
+
+        #[clap(parse(from_os_str))]
+        proof_out_path:  Option<std::path::PathBuf>,
+
+        /// Flag indicating whether to print the proof.
+        /// It is written to file by default.
+        /// If this flag is true 
+        #[clap(short, long)]
+        print: bool,
     },
 }
 
@@ -43,12 +53,18 @@ fn generate_root_cmd(path: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn generate_proof_cmd(path: std::path::PathBuf, data: &String) -> Result<(), Box<dyn Error>> {
+fn generate_proof_cmd(path: std::path::PathBuf, proof_for: &String, proof_out_path: &Option<std::path::PathBuf>, print: bool) -> Result<(), Box<dyn Error>> {
     let entries = parse_csv(path)?;
 
-    let proof = controller::get_proof(&entries,  &data.as_bytes().to_vec())?;
+    let proof = controller::get_proof(&entries,  &proof_for.as_bytes().to_vec())?;
 
-    println!("{}", proof);
+    if print {
+        println!("{}", proof);
+    }
+
+    if proof_out_path.is_some() {
+        fs::write(proof_out_path.as_ref().unwrap(), proof)?;
+    }
     
     Ok(())
 }
@@ -79,8 +95,13 @@ fn main() {
                 process::exit(1);
             }
         }
-        Some(Commands::GenerateProof { path, data }) => {
-            if let Err(err) = generate_proof_cmd(path.to_path_buf(), data) {
+        Some(Commands::GenerateProof { data_set_path: path, proof_for: data, proof_out_path, print }) => {
+            if proof_out_path.is_none() && !print {
+                println!("please provide a proof_out_path argument or set --print flag to true");
+                process::exit(1);
+            }
+            
+            if let Err(err) = generate_proof_cmd(path.to_path_buf(), data, proof_out_path, *print) {
                 println!("error generating merkle proof: {}", err);
                 process::exit(1);
             }
