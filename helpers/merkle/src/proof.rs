@@ -1,6 +1,7 @@
 use crate::hash;
+use serde::{Serialize, Deserialize};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub struct Entry {
     pub is_left_sibling: bool,
     pub hash: hash::Hash,
@@ -16,7 +17,7 @@ impl Entry {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct Proof(Vec<Entry>);
 
 impl Proof {

@@ -1,5 +1,6 @@
 use std::fmt;
 
+use serde::{Serialize, Deserialize};
 use sha3::{Digest, Sha3_256};
 
 // The distinction in prefixes is needed
@@ -11,7 +12,7 @@ const BRANCH_NODE_PREFIX: &[u8] = &[1];
 
 pub const HASH_BYTES: usize = 32;
 
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Serialize, Deserialize)]
 pub struct Hash(pub(crate) [u8; HASH_BYTES]);
 
 impl fmt::Display for Hash {

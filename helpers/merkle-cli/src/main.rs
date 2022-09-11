@@ -2,8 +2,7 @@ use clap::{Parser, Subcommand};
 use std::error::Error;
 use std::process;
 
-mod generate_root;
-mod get_proof;
+mod controller;
 
 #[derive(Parser)]
 struct Cli {
@@ -30,20 +29,27 @@ enum Commands {
         /// See example in testdata.
         #[clap(parse(from_os_str))]
         path: std::path::PathBuf,
+
+        /// The data to generate proof for.
+        #[clap()]
+        data: String,
     },
 }
 
-fn generate_merkle_root_cmd(path: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
+fn generate_root_cmd(path: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
     let entries = parse_csv(path)?;
-    let hash = generate_root::run(entries);
+    let hash = controller::run(&entries);
     println!("{}", hash);
     Ok(())
 }
 
-fn generate_proof_cmd(path: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
+fn generate_proof_cmd(path: std::path::PathBuf, data: &String) -> Result<(), Box<dyn Error>> {
     let entries = parse_csv(path)?;
-    let hash = generate_root::run(entries);
-    println!("{}", hash);
+
+    let proof = controller::get_proof(&entries,  &data.as_bytes().to_vec())?;
+
+    println!("{}", proof);
+    
     Ok(())
 }
 
@@ -68,13 +74,13 @@ fn main() {
 
     match &cli.command {
         Some(Commands::GenerateRoot { path }) => {
-            if let Err(err) = generate_merkle_root_cmd(path.to_path_buf()) {
+            if let Err(err) = generate_root_cmd(path.to_path_buf()) {
                 println!("error generating merkle root: {}", err);
                 process::exit(1);
             }
         }
-        Some(Commands::GenerateProof { path }) => {
-            if let Err(err) = generate_proof_cmd(path.to_path_buf()) {
+        Some(Commands::GenerateProof { path, data }) => {
+            if let Err(err) = generate_proof_cmd(path.to_path_buf(), data) {
                 println!("error generating merkle proof: {}", err);
                 process::exit(1);
             }
