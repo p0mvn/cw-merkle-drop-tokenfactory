@@ -78,7 +78,7 @@ fn round_up_power_of_two(n: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use crate::merkle_tree::test_util;
+    use crate::test_util;
     use std::vec;
 
     use super::*;

@@ -1,18 +1,18 @@
-use crate::binary_search;
-use crate::builder;
-use crate::hash;
-use crate::proof;
+mod binary_search;
+mod builder;
+mod hash;
+pub mod proof;
 
 #[derive(Debug)]
-pub struct MerkleTree {
+pub struct Tree {
     leaf_count: usize,
     nodes: Vec<hash::Hash>,
 }
 
-impl MerkleTree {
+impl Tree {
     pub fn new<T: AsRef<[u8]>>(items: &[T]) -> Self {
         if items.len() == 0 {
-            return MerkleTree {
+            return Tree {
                 leaf_count: 0,
                 nodes: Vec::<hash::Hash>::new(),
             };
@@ -23,7 +23,7 @@ impl MerkleTree {
 
         builder::build_branch_levels(&mut nodes);
 
-        let mt = MerkleTree {
+        let mt = Tree {
             leaf_count: leaf_count,
             nodes: nodes,
         };
@@ -128,7 +128,7 @@ mod tests {
     fn new_merkle_tree_empty() {
         let items: Vec<String> = vec![];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         let root = mt.get_root();
 
@@ -150,7 +150,7 @@ mod tests {
     fn new_merkle_tree_one_element() {
         let items: Vec<&[u8]> = vec![test_util::OSMO];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         let root = mt.get_root();
 
@@ -174,7 +174,7 @@ mod tests {
     fn new_merkle_tree_two_elements() {
         let mut items: Vec<&[u8]> = vec![test_util::OSMO, test_util::ION];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         test_util::hash_and_sort(&mut items);
 
@@ -219,7 +219,7 @@ mod tests {
     fn new_merkle_tree_three_elements() {
         let mut items: Vec<&[u8]> = vec![test_util::OSMO, test_util::WETH, test_util::ION];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         test_util::hash_and_sort(&mut items);
 
@@ -309,7 +309,7 @@ mod tests {
     fn find_proof_one() {
         let items: Vec<&[u8]> = vec![test_util::OSMO];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         let result = mt.find_proof(&test_util::OSMO);
 
@@ -321,7 +321,7 @@ mod tests {
         // N.B.: SHA3_256 lexicographical byte order is: hash(OSMO), hash(WETH).
         let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::WETH];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         let result = mt.find_proof(&test_util::WETH);
 
@@ -340,7 +340,7 @@ mod tests {
         // N.B.: SHA3_256 lexicographical byte order is: hash(OSMO), hash(WETH).
         let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::WETH];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         let result = mt.find_proof(&test_util::ION);
 
@@ -372,7 +372,7 @@ mod tests {
             test_util::AKT,
         ];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         let result = mt.find_proof(&test_util::ION);
 
@@ -418,7 +418,7 @@ mod tests {
             test_util::AKT,
         ];
 
-        let mt = MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         let result = mt.find_proof(&test_util::WETH);
 

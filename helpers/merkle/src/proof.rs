@@ -58,8 +58,8 @@ impl Proof {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::merkle_tree;
-    use crate::merkle_tree::test_util;
+    use crate::test_util;
+    use crate::Tree;
 
     #[test]
     fn verify_works() {
@@ -71,7 +71,7 @@ mod tests {
             test_util::AKT,
         ];
 
-        let mt = merkle_tree::MerkleTree::new(&items);
+        let mt = Tree::new(&items);
 
         let proof = mt.find_proof(&test_util::USDC).unwrap();
 

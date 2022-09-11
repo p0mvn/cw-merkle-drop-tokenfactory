@@ -1,10 +1,10 @@
 use hex;
 
-use solana_merkle_tree::MerkleTree;
+use merkle::Tree;
 
 pub fn run(data: Vec<Vec<u8>>) -> String {
-    let merkle_tree = MerkleTree::new(&data);
+    let merkle_tree = Tree::new(&data);
     let hash = merkle_tree.get_root().unwrap();
 
-    hex::encode(hash.to_bytes())
+    return hex::encode(hash);
 }
