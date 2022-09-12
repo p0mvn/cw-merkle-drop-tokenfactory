@@ -33,11 +33,11 @@ pub fn get_proof(data: &Vec<Vec<u8>>, proof_for: &Vec<u8>) -> Result<String, Box
     Ok(serialized)
 }
 
-pub fn verify_proof(root: &String, proof_data: &String) -> Result<bool, Box<dyn Error>> {
-    let proof: merkle::proof::Proof = serde_json::from_str(&proof_data)?;
-    let root_hash = base64::decode(root)?;
+pub fn verify_proof(root: &String, proof_bytes: &String, to_verify: &String) -> Result<bool, Box<dyn Error>> {
+    let proof: merkle::proof::Proof = serde_json::from_str(&proof_bytes)?;
+    let root_decoded = base64::decode(root)?;
 
-    // proof.verify(data, root)
+    proof.verify(to_verify, &merkle::hash::Hash::from(root_decoded));
 
     Ok(true)
 }

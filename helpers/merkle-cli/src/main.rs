@@ -60,6 +60,9 @@ enum Commands {
         #[clap()]
         root: String,
 
+        /// to_verify data to verify.
+        to_verify: String,
+
         /// proof_path is the path to the file containing proof
         /// serialized as json.
         #[clap(parse(from_os_str))]
@@ -104,10 +107,10 @@ fn generate_proof_cmd(
     Ok(())
 }
 
-fn verify_proof_cmd(root: &String, proof_path: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
+fn verify_proof_cmd(root: &String, proof_path: std::path::PathBuf, to_verify: &String) -> Result<(), Box<dyn Error>> {
     let data = fs::read_to_string(proof_path.to_path_buf())?;
 
-    let is_valid = controller::verify_proof(root, &data)?;
+    let is_valid = controller::verify_proof(root, &data, to_verify)?;
 
     if !is_valid {
         return Err("The proof is invalid. End result did not match the root hash".into());
@@ -169,17 +172,17 @@ fn main() {
                 process::exit(1);
             }
         }
-        Some(Commands::VerifyProof { root, proof_path }) => {
+        Some(Commands::VerifyProof { root, proof_path, to_verify }) => {
             if root.len() == 0 {
                 eprintln!("root was empty, please provide the Merkle root hash base16 encoded");
                 process::exit(1);
             }
-            if proof_path.is_file() {
+            if !proof_path.is_file() {
                 eprintln!("given path does not point to a file, please verify its correctness");
                 process::exit(1);
             }
 
-            if let Err(err) = verify_proof_cmd(root, proof_path.to_path_buf()) {
+            if let Err(err) = verify_proof_cmd(root, proof_path.to_path_buf(), to_verify) {
                 eprintln!("error verifyin merkle proof: {}", err);
                 process::exit(1);
             }
