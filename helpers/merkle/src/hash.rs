@@ -1,6 +1,6 @@
 use std::fmt;
 
-use serde::{de, Deserialize, Serialize, Serializer, Deserializer, de::Visitor};
+use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use sha3::{Digest, Sha3_256};
 
 // The distinction in prefixes is needed
@@ -25,7 +25,9 @@ impl Serialize for Hash {
         S: Serializer,
     {
         let hash = base64::encode(self);
-        serializer.serialize_bytes(hash.as_bytes())
+        let bytes = hash.as_bytes();
+
+        serializer.serialize_bytes(bytes)
     }
 }
 
@@ -35,14 +37,19 @@ impl<'de> Visitor<'de> for HashVisitor {
     type Value = Hash;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("an integer between -2^31 and 2^31")
+        formatter.write_str("a sequence of bytes")
     }
 
-    fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
-        where
-            E: de::Error, {
-        let hash = Hash::from(v);
-        Ok(hash)
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: de::SeqAccess<'de>,
+    {
+        let mut new_obj = Vec::<u8>::new();
+        while let Some(value) = seq.next_element()? {
+            let value_b: u8 = value;
+            new_obj.push(value_b);
+        };
+        Ok(Hash::from(base64::decode(&new_obj).unwrap()))
     }
 }
 
@@ -51,7 +58,7 @@ impl<'de> Deserialize<'de> for Hash {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_byte_buf(HashVisitor)
+        deserializer.deserialize_seq(HashVisitor)
     }
 }
 
@@ -118,7 +125,7 @@ mod tests {
     #[test]
     fn custom_serialization_works() {
         let test_entry = leaf(test_util::OSMO);
-        
+
         let serialized = serde_json::to_string(&test_entry).unwrap();
         let deserialized: Hash = serde_json::from_str(&serialized).unwrap();
 
