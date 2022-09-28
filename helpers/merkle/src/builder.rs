@@ -44,7 +44,7 @@ pub fn build_branch_levels(nodes: &mut Vec<hash::Hash>) {
     }
 }
 
-/// TODO: spec and tests
+/// TODO: spec
 #[inline]
 pub fn get_next_level_length(level_len: usize) -> usize {
     if level_len == 1 {
@@ -54,7 +54,7 @@ pub fn get_next_level_length(level_len: usize) -> usize {
     }
 }
 
-/// TODO: spec and tests
+/// TODO: spec
 fn calculate_tree_capacity<T>(items: &[T]) -> usize {
     let leaves_count = items.len();
     let branch_node_count = round_up_power_of_two(items.len());
@@ -63,7 +63,6 @@ fn calculate_tree_capacity<T>(items: &[T]) -> usize {
 
 /// round_up_power_of_two returns the next power of two
 /// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-/// TODO: test
 fn round_up_power_of_two(n: usize) -> usize {
     let mut v = n;
     v -= 1;
@@ -79,7 +78,7 @@ fn round_up_power_of_two(n: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use crate::test_util;
-    use std::vec;
+    use std::{vec, collections::HashMap};
 
     use super::*;
 
@@ -95,6 +94,41 @@ mod tests {
         validate_nodes(&expected_nodes, &actual_nodes);
     }
 
+    #[test]
+    fn round_up_two() {
+        let tests = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 1000];
+        let sols = vec![2, 2, 4, 4, 8, 8, 8, 8, 16, 1024];
+        for i in 1..tests.len() {
+            assert_eq!(round_up_power_of_two(tests[i]), sols[i]);
+        }
+    }
+
+    #[test]
+    fn tree_capacity() {
+        let mut tests: HashMap<usize, Vec<&str>> = HashMap::new();
+        tests.insert(8, vec!["node", "node", "node", "node"]);
+        tests.insert(7, vec![ "node", "node", "node"]);
+        tests.insert(13, vec!["node", "node", "node", "node", "node"]);
+        tests.insert(2024, vec!["node"; 1000]);
+
+        for tc in tests {
+            let expected = tc.1.len() + round_up_power_of_two(tc.1.len());
+            assert_eq!(tc.0, expected);
+        }
+    }
+    #[test]
+    fn next_level_length() {
+        let tests = vec![1, 2, 3, 4, 5, 6, 7, 8];
+
+        for tc in tests {
+            let next_level = get_next_level_length(tc);
+            if tc != 1 {
+                assert_eq!(next_level, (tc + 1)/2)
+            } else {
+                assert_eq!(next_level, 0)
+            }
+        }
+    }
     #[test]
     fn build_branch_level_two_nodes() {
         let items: Vec<&[u8]> = vec![test_util::OSMO, test_util::ION];

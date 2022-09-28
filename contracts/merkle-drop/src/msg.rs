@@ -2,6 +2,7 @@ use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub merkle_root: String,
@@ -19,6 +20,9 @@ pub enum ExecuteMsg {
         amount: Uint128,
         proof: Vec<String>,
     },
+    // SendAssets {
+        
+    // }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
