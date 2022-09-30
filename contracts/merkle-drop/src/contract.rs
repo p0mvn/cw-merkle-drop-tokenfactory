@@ -1,13 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, BankMsg
 };
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, GetMerkleRootResponse, InstantiateMsg, QueryMsg};
-use crate::state::{State, STATE};
+use crate::state::{Config, CONFIG};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
@@ -20,12 +20,12 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let state = State {
+    let config = Config {
         merkle_root: msg.merkle_root,
         owner: info.sender.clone(),
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    STATE.save(deps.storage, &state)?;
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new()
         .add_attribute("method", "instantiate")
@@ -93,9 +93,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 fn query_root(deps: Deps) -> StdResult<GetMerkleRootResponse> {
-    let state = STATE.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
     Ok(GetMerkleRootResponse {
-        root: state.merkle_root,
+        root: config.merkle_root,
     })
 }
 
