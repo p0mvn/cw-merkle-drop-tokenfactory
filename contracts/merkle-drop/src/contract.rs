@@ -56,7 +56,9 @@ pub fn claim(
     proof_str: String,
 ) -> Result<Response, ContractError> {
 
-    verify_proof(deps, &to_prove, &proof_str)?;
+    let root_encoded = CONFIG.load(deps.storage).unwrap().merkle_root;
+
+    verify_proof(&root_encoded, &to_prove, &proof_str)?;
 
     Ok(Response::new().add_attribute("method", "verify_proof"))
 }
