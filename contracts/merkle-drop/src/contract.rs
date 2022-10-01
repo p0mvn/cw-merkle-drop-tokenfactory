@@ -3,11 +3,16 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, BankMsg
 };
+use serde::de::Error;
+use serde_json;
 use cw2::set_contract_version;
+use merkle::{Tree, proof::Proof, hash::Hash};
+use base64;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, GetMerkleRootResponse, InstantiateMsg, QueryMsg};
 use crate::state::{Config, CONFIG};
+use crate::execute::{verify_proof};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
@@ -40,48 +45,19 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::LazyMint {
-            message_hash,
-            signature,
-            public_key,
-        } => try_lazy_mint(deps, message_hash, signature, public_key),
-        ExecuteMsg::VerifyProof { amount, proof } => verify_proof(deps, info, amount, proof),
+        ExecuteMsg::VerifyProof { to_prove, proof } => claim(deps, info, to_prove, proof),
     }
 }
 
-pub fn try_lazy_mint(
+pub fn claim(
     deps: DepsMut,
-    message_hash: Vec<u8>,
-    signature: Vec<u8>,
-    public_key: Vec<u8>,
+    _info: MessageInfo,
+    to_prove: String,
+    proof_str: String,
 ) -> Result<Response, ContractError> {
-    let verify_result = deps
-        .api
-        .secp256k1_verify(&message_hash, &signature, &public_key);
 
-    let is_verified = match verify_result {
-        Ok(result) => result,
-        Err(error) => false,
-    };
+    verify_proof(deps, &to_prove, &proof_str)?;
 
-    if !is_verified {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-    //     state.count += 1;
-    //     Ok(state)
-    // })?;
-
-    Ok(Response::new().add_attribute("method", "try_increment"))
-}
-
-pub fn verify_proof(
-    deps: DepsMut,
-    info: MessageInfo,
-    amount: Uint128,
-    proof: Vec<String>,
-) -> Result<Response, ContractError> {
     Ok(Response::new().add_attribute("method", "verify_proof"))
 }
 
