@@ -45,16 +45,19 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::VerifyProof { to_prove, proof } => claim(deps, info, to_prove, proof),
+        ExecuteMsg::Claim { proof, amount } => claim(deps, info, proof, amount),
     }
 }
 
 pub fn claim(
     deps: DepsMut,
-    _info: MessageInfo,
-    to_prove: String,
+    info: MessageInfo,
     proof_str: String,
+    amount: Coin,
 ) -> Result<Response, ContractError> {
+
+    let sender = info.sender.as_str();
+    let to_prove = format!("{}{}", sender, amount.to_string());
 
     let root_encoded = CONFIG.load(deps.storage).unwrap().merkle_root;
 

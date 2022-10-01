@@ -1,4 +1,4 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Uint128, Coin};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -11,13 +11,10 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    VerifyProof {
-        to_prove: String,
+    Claim {
         proof: String,
+        amount: Coin,
     },
-    // SendAssets {
-        
-    // }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
