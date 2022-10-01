@@ -1,9 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult
+    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg
 };
 use cw2::set_contract_version;
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::MsgMint;
+use osmosis_std::types::cosmos::base::v1beta1;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, GetMerkleRootResponse, InstantiateMsg, QueryMsg};
@@ -13,6 +15,8 @@ use crate::execute::{verify_proof};
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const MINT_MSG_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -36,23 +40,25 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Claim { proof, amount } => claim(deps, info, proof, amount),
+        ExecuteMsg::Claim { proof, amount } => claim(deps, env, info, proof, amount),
     }
 }
 
 pub fn claim(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     proof_str: String,
     amount: Coin,
 ) -> Result<Response, ContractError> {
-    let sender = info.sender.as_str();
+    let config = CONFIG.load(deps.storage).unwrap();
 
+    let sender = info.sender.as_str();
     let claim = format!("{}{}", sender, amount.to_string());
 
     let claim_check = CLAIM.may_load(deps.storage, &claim)?;
@@ -60,13 +66,21 @@ pub fn claim(
         return Err(ContractError::AlreadyClaimed { claim: claim.clone() })
     }
 
-    let root_encoded = CONFIG.load(deps.storage).unwrap().merkle_root;
+    verify_proof(&config.merkle_root, &claim, &proof_str)?;
 
-    verify_proof(&root_encoded, &claim, &proof_str)?;
+    let mint_msg = MsgMint{
+        sender: env.contract.address.to_string(),
+        amount: Some(v1beta1::Coin{
+            denom: amount.denom,
+            amount: amount.amount.to_string(),
+        })
+    };
 
     CLAIM.save(deps.storage, &claim, &true)?;
 
-    Ok(Response::new().add_attribute("method", "verify_proof"))
+    Ok(Response::new()
+    .add_attribute("action", "claim")
+    .add_submessage(SubMsg::reply_on_success(mint_msg, MINT_MSG_ID)))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
