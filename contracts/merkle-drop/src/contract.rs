@@ -1,17 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, BankMsg
+    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult
 };
-use serde::de::Error;
-use serde_json;
 use cw2::set_contract_version;
-use merkle::{Tree, proof::Proof, hash::Hash};
-use base64;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, GetMerkleRootResponse, InstantiateMsg, QueryMsg};
-use crate::state::{Config, CONFIG};
+use crate::state::{Config, CONFIG, CLAIM};
 use crate::execute::{verify_proof};
 
 // version info for migration info
@@ -55,13 +51,20 @@ pub fn claim(
     proof_str: String,
     amount: Coin,
 ) -> Result<Response, ContractError> {
-
     let sender = info.sender.as_str();
-    let to_prove = format!("{}{}", sender, amount.to_string());
+
+    let claim = format!("{}{}", sender, amount.to_string());
+
+    let claim_check = CLAIM.may_load(deps.storage, &claim)?;
+    if claim_check.is_some() {
+        return Err(ContractError::AlreadyClaimed { claim: claim.clone() })
+    }
 
     let root_encoded = CONFIG.load(deps.storage).unwrap().merkle_root;
 
-    verify_proof(&root_encoded, &to_prove, &proof_str)?;
+    verify_proof(&root_encoded, &claim, &proof_str)?;
+
+    CLAIM.save(deps.storage, &claim, &true)?;
 
     Ok(Response::new().add_attribute("method", "verify_proof"))
 }

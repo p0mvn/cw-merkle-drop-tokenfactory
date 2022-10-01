@@ -14,4 +14,7 @@ pub enum ContractError {
 
     #[error("Failed to verify proof")]
     FailedVerifyProof {},
+
+    #[error("{claim:?} already claimed")]
+    AlreadyClaimed { claim: String },
 }

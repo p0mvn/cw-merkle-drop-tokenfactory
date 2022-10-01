@@ -1,7 +1,6 @@
-use cosmwasm_std::{DepsMut};
 use merkle::{proof::Proof, hash::Hash};
 
-use crate::{state::CONFIG, ContractError};
+use crate::{ContractError};
 
 pub fn verify_proof(merkle_root: &String, proof_str: &String, to_verify: &String) -> Result<(), ContractError> {
     let proof: Proof = serde_json::from_str(proof_str).unwrap();
