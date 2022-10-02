@@ -33,6 +33,11 @@ jobs:
         with:
           toolchain: nightly
           target: wasm32-unknown-unknown
+        
+      - name: Install go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.18.0'
 
       - name: Add the wasm target
         working-directory: ${{ matrix.contract.workdir }}
