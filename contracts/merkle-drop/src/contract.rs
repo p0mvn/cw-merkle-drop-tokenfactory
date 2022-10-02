@@ -6,11 +6,12 @@ use cosmwasm_std::{
     to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg, Reply, StdError
 };
 use cw2::set_contract_version;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, QueryDenomAuthorityMetadataRequest};
+use osmosis_std::types::cosmos::auth;
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, QueryDenomAuthorityMetadataRequest, TokenfactoryQuerier};
 use osmosis_std::types::cosmos::base::v1beta1;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, GetMerkleRootResponse, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, GetRootResponse, InstantiateMsg, QueryMsg};
 use crate::reply::handle_mint_reply;
 use crate::state::{Config, CONFIG, CLAIM};
 use crate::execute::{verify_proof};
@@ -63,10 +64,18 @@ pub fn set_denom(deps: DepsMut, info: MessageInfo, subdenom: String) -> Result<R
     }
 
     // validate subdenom and that owner is admin
+    let tf_querier = TokenfactoryQuerier::new(&deps.querier);
+    let response = tf_querier.denom_authority_metadata(format!("tokenfactory/{}/{}", config.owner, subdenom))?;
+    
+    if response.authority_metadata.is_none() {
+        return Err(ContractError::Std(StdError::GenericErr { msg: String::from("invalid authority metadata") }))
+    }
 
-    // let query = QueryDenomAuthorityMetadataRequest{
-    //     denom
-    // };
+    let auth_metadata = response.authority_metadata.unwrap();
+
+    if auth_metadata.admin.eq(&config.owner) {
+        return Err(ContractError::Unauthorized {  })
+    }
 
     Ok(Response::default())
 }
@@ -130,13 +139,13 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetCount {} => to_binary(&query_root(deps)?),
+        QueryMsg::GetRoot {} => to_binary(&query_root(deps)?),
     }
 }
 
-fn query_root(deps: Deps) -> StdResult<GetMerkleRootResponse> {
+fn query_root(deps: Deps) -> StdResult<GetRootResponse> {
     let config = CONFIG.load(deps.storage)?;
-    Ok(GetMerkleRootResponse {
+    Ok(GetRootResponse {
         root: config.merkle_root,
     })
 }
@@ -159,13 +168,11 @@ mod tests {
         };
         let info = mock_info("creator", &coins(1000, "earth"));
 
-        // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
         assert_eq!(0, res.messages.len());
 
-        // it worked, let's query the state
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: GetMerkleRootResponse = from_binary(&res).unwrap();
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetRoot {}).unwrap();
+        let value: GetRootResponse = from_binary(&res).unwrap();
         assert_eq!(TEST_ROOT, value.root);
     }
 }

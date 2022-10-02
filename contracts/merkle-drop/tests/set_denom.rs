@@ -4,7 +4,7 @@ use merkle_drop::msg::{ExecuteMsg};
 use test_env::*;
 
 test_set_denom!(
-    set_denom
+    set_denom_valid_owner
     should succeed
 );
 
