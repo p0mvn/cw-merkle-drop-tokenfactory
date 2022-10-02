@@ -22,5 +22,5 @@ pub enum ContractError {
     UnknownReplyId { reply_id: u64 },
 
     #[error("Failed to mint")]
-    FailedToMint { },
+    FailedToMint {},
 }

@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
 use cosmwasm_std::Coin;
-use osmosis_std::types::osmosis::tokenfactory;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenomResponse, MsgCreateDenom};
-use osmosis_testing::{Account, OsmosisTestApp, SigningAccount, Runner, ExecuteResponse};
-use osmosis_testing::{Gamm, Module, Wasm};
 use merkle_drop::msg::InstantiateMsg;
+use osmosis_std::types::osmosis::tokenfactory;
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgCreateDenomResponse};
+use osmosis_testing::{Account, ExecuteResponse, OsmosisTestApp, Runner, SigningAccount};
+use osmosis_testing::{Gamm, Module, Wasm};
 
 const TEST_ROOT: &str = "Nz54SQtyBVHwsmEqNI//mxFgiq8MRD7sS92IGkhgMvo=";
 
@@ -33,13 +33,14 @@ impl TestEnv {
 
         let valid_sender = app.init_account(&initial_balance).unwrap();
 
-        let create_denom_msg = tokenfactory::v1beta1::MsgCreateDenom{
+        let create_denom_msg = tokenfactory::v1beta1::MsgCreateDenom {
             sender: valid_sender.address(),
             subdenom: String::from(VALID_SUBDENOM),
         };
 
-        let _res: ExecuteResponse<MsgCreateDenomResponse> =
-            app.execute(create_denom_msg, MsgCreateDenom::TYPE_URL, &valid_sender).unwrap();
+        let _res: ExecuteResponse<MsgCreateDenomResponse> = app
+            .execute(create_denom_msg, MsgCreateDenom::TYPE_URL, &valid_sender)
+            .unwrap();
 
         let code_id = wasm
             .store_code(&get_wasm(), None, &owner)
@@ -66,7 +67,7 @@ impl TestEnv {
             app,
             contract_address,
             owner,
-            valid_sender
+            valid_sender,
         }
     }
 }

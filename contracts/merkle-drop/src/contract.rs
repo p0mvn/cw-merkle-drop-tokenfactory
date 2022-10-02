@@ -1,20 +1,18 @@
-use std::error::Error;
-
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg, Reply, StdError
+    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
+    SubMsg,
 };
 use cw2::set_contract_version;
-use osmosis_std::types::cosmos::auth;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, QueryDenomAuthorityMetadataRequest, TokenfactoryQuerier};
 use osmosis_std::types::cosmos::base::v1beta1;
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, TokenfactoryQuerier};
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, GetRootResponse, InstantiateMsg, QueryMsg, GetSubDenomResponse};
+use crate::execute::verify_proof;
+use crate::msg::{ExecuteMsg, GetRootResponse, GetSubDenomResponse, InstantiateMsg, QueryMsg};
 use crate::reply::handle_mint_reply;
-use crate::state::{Config, CONFIG, CLAIM, SUBDENOM};
-use crate::execute::{verify_proof};
+use crate::state::{Config, CLAIM, CONFIG, SUBDENOM};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
@@ -54,40 +52,43 @@ pub fn execute(
     }
 }
 
-pub fn set_subdenom(deps: DepsMut, info: MessageInfo, subdenom: String) -> Result<Response, ContractError> {
-
+pub fn set_subdenom(
+    deps: DepsMut,
+    info: MessageInfo,
+    subdenom: String,
+) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     // validate sender
     if config.owner != info.sender {
-        return Err(ContractError::Unauthorized {  })
+        return Err(ContractError::Unauthorized {});
     }
 
     // validate subdenom and that sender is admin
     let tf_querier = TokenfactoryQuerier::new(&deps.querier);
-    let response = tf_querier.denom_authority_metadata(format!("tokenfactory/{}/{}", info.sender, subdenom))?;
-    
+    let response = tf_querier
+        .denom_authority_metadata(format!("tokenfactory/{}/{}", info.sender, subdenom))?;
+
     if response.authority_metadata.is_none() {
-        return Err(ContractError::Std(StdError::GenericErr { msg: String::from("invalid authority metadata") }))
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: String::from("invalid authority metadata"),
+        }));
     }
 
     let auth_metadata = response.authority_metadata.unwrap();
 
     if auth_metadata.admin.eq(&info.sender) {
-        return Err(ContractError::Unauthorized {  })
+        return Err(ContractError::Unauthorized {});
     }
 
     SUBDENOM.save(deps.storage, &subdenom)?;
 
-    deps.api.debug(&format!(
-        "saved subdenom {0}", &subdenom
-    ));
+    deps.api.debug(&format!("saved subdenom {0}", &subdenom));
 
     Ok(Response::new()
-    .add_attribute("method", "set_subdenom")
-    .add_attribute("owner", info.sender)
-    .add_attribute("subdenom", subdenom))
-    
+        .add_attribute("method", "set_subdenom")
+        .add_attribute("owner", info.sender)
+        .add_attribute("subdenom", subdenom))
 }
 
 pub fn claim(
@@ -104,36 +105,33 @@ pub fn claim(
 
     let claim_check = CLAIM.may_load(deps.storage, &claim)?;
     if claim_check.is_some() {
-        return Err(ContractError::AlreadyClaimed { claim: claim.clone() })
+        return Err(ContractError::AlreadyClaimed {
+            claim: claim.clone(),
+        });
     }
 
-    deps.api.debug(&format!(
-        "merkle_root {0}", &config.merkle_root
-    ));
+    deps.api
+        .debug(&format!("merkle_root {0}", &config.merkle_root));
 
-    deps.api.debug(&format!(
-        "proof_str {0}", &proof_str
-    ));
+    deps.api.debug(&format!("proof_str {0}", &proof_str));
 
-    deps.api.debug(&format!(
-        "claim {0}", &claim
-    ));
+    deps.api.debug(&format!("claim {0}", &claim));
 
     verify_proof(&config.merkle_root, &proof_str, &claim)?;
 
-    let mint_msg = MsgMint{
+    let mint_msg = MsgMint {
         sender: env.contract.address.to_string(),
-        amount: Some(v1beta1::Coin{
+        amount: Some(v1beta1::Coin {
             denom: amount.denom,
             amount: amount.amount.to_string(),
-        })
+        }),
     };
 
     CLAIM.save(deps.storage, &claim, &true)?;
 
     Ok(Response::new()
-    .add_attribute("action", "claim")
-    .add_submessage(SubMsg::reply_always(mint_msg, MINT_MSG_ID)))
+        .add_attribute("action", "claim")
+        .add_submessage(SubMsg::reply_always(mint_msg, MINT_MSG_ID)))
 }
 
 /// Handling submessage reply.
@@ -150,7 +148,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetRoot {} => to_binary(&query_root(deps)?),
-        QueryMsg::GetSubdenom {  } => to_binary(&query_subdenom(deps)?)
+        QueryMsg::GetSubdenom {} => to_binary(&query_subdenom(deps)?),
     }
 }
 
@@ -164,13 +162,10 @@ fn query_root(deps: Deps) -> StdResult<GetRootResponse> {
 fn query_subdenom(deps: Deps) -> StdResult<GetSubDenomResponse> {
     let subdenom = SUBDENOM.load(deps.storage)?;
 
-    deps.api.debug(&format!(
-        "returning subdenom {0}", &subdenom
-    ));
+    deps.api
+        .debug(&format!("returning subdenom {0}", &subdenom));
 
-    Ok(GetSubDenomResponse {
-        subdenom: subdenom,
-    })
+    Ok(GetSubDenomResponse { subdenom: subdenom })
 }
 
 #[cfg(test)]

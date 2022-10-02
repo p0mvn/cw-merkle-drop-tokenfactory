@@ -46,7 +46,7 @@ impl<'de> Visitor<'de> for HashVisitor {
         while let Some(value) = seq.next_element()? {
             let value_b: u8 = value;
             new_obj.push(value_b);
-        };
+        }
         Ok(Hash::from(base64::decode(&new_obj).unwrap()))
     }
 }

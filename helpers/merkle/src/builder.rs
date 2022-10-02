@@ -78,7 +78,7 @@ fn round_up_power_of_two(n: u128) -> u128 {
 #[cfg(test)]
 mod tests {
     use crate::test_util;
-    use std::{vec, collections::HashMap};
+    use std::{collections::HashMap, vec};
 
     use super::*;
 
@@ -107,7 +107,7 @@ mod tests {
     fn tree_capacity() {
         let mut tests: HashMap<u128, Vec<&str>> = HashMap::new();
         tests.insert(8, vec!["node", "node", "node", "node"]);
-        tests.insert(7, vec![ "node", "node", "node"]);
+        tests.insert(7, vec!["node", "node", "node"]);
         tests.insert(13, vec!["node", "node", "node", "node", "node"]);
         tests.insert(2024, vec!["node"; 1000]);
 
@@ -123,7 +123,7 @@ mod tests {
         for tc in tests {
             let next_level = get_next_level_length(tc);
             if tc != 1 {
-                assert_eq!(next_level, (tc + 1)/2)
+                assert_eq!(next_level, (tc + 1) / 2)
             } else {
                 assert_eq!(next_level, 0)
             }

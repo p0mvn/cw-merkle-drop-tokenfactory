@@ -1,7 +1,5 @@
-use cosmwasm_std::{Coin};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_std::Coin;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -10,13 +8,8 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    SetSubDenom {
-        subdenom: String,
-    },
-    Claim {
-        proof: String,
-        amount: Coin,
-    },
+    SetSubDenom { subdenom: String },
+    Claim { proof: String, amount: Coin },
 }
 
 #[cw_serde]

@@ -33,7 +33,11 @@ pub fn get_proof(data: &Vec<Vec<u8>>, proof_for: &Vec<u8>) -> Result<String, Box
     Ok(serialized)
 }
 
-pub fn verify_proof(root: &String, proof_bytes: &String, to_verify: &String) -> Result<bool, Box<dyn Error>> {
+pub fn verify_proof(
+    root: &String,
+    proof_bytes: &String,
+    to_verify: &String,
+) -> Result<bool, Box<dyn Error>> {
     let proof: merkle::proof::Proof = serde_json::from_str(&proof_bytes)?;
     let root_decoded = base64::decode(root)?;
 

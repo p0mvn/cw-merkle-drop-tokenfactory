@@ -1,24 +1,27 @@
-use merkle::{proof::Proof, hash::Hash};
+use merkle::{hash::Hash, proof::Proof};
 
-use crate::{ContractError};
+use crate::ContractError;
 
-pub fn verify_proof(merkle_root: &String, proof_str: &String, to_verify: &String) -> Result<(), ContractError> {
+pub fn verify_proof(
+    merkle_root: &String,
+    proof_str: &String,
+    to_verify: &String,
+) -> Result<(), ContractError> {
     let proof: Proof = serde_json_wasm::from_str(proof_str).unwrap();
     let root = match base64::decode(merkle_root) {
-        Ok(f)=> {
-            f
-         },
-         Err(e)=> {
-            return Err(ContractError::FailedToDecodeRoot { root: e.to_string() })
-         }
+        Ok(f) => f,
+        Err(e) => {
+            return Err(ContractError::FailedToDecodeRoot {
+                root: e.to_string(),
+            })
+        }
     };
 
     let root_hash = Hash::from(root);
 
     if !proof.verify(to_verify, &root_hash) {
-        return Err(ContractError::FailedVerifyProof {  })
+        return Err(ContractError::FailedVerifyProof {});
     }
-
 
     Ok(())
 }
@@ -38,16 +41,31 @@ mod tests {
 
     #[test]
     fn verify_proof_success() {
-        verify_proof(&String::from(TEST_ROOT), &String::from(VALID_PROOF_STR), &String::from(TO_VERIFY_VALID)).unwrap();
+        verify_proof(
+            &String::from(TEST_ROOT),
+            &String::from(VALID_PROOF_STR),
+            &String::from(TO_VERIFY_VALID),
+        )
+        .unwrap();
     }
 
     #[test]
     fn verify_proof_invalid_root_error() {
-        verify_proof(&String::from("this is garbage"), &String::from(VALID_PROOF_STR), &String::from(TO_VERIFY_VALID)).unwrap_err();
+        verify_proof(
+            &String::from("this is garbage"),
+            &String::from(VALID_PROOF_STR),
+            &String::from(TO_VERIFY_VALID),
+        )
+        .unwrap_err();
     }
 
     #[test]
     fn verify_proof_invalid_proof_error() {
-        verify_proof(&String::from(TEST_ROOT), &String::from(INVALID_PROOF_STR), &String::from(TO_VERIFY_VALID)).unwrap_err();
+        verify_proof(
+            &String::from(TEST_ROOT),
+            &String::from(INVALID_PROOF_STR),
+            &String::from(TO_VERIFY_VALID),
+        )
+        .unwrap_err();
     }
 }
