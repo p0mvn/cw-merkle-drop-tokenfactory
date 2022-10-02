@@ -9,7 +9,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     SetSubDenom { subdenom: String },
-    Claim { proof: String, amount: Uint128 },
+    Claim { proof: String, amount: Uint128, claimer_addr: String },
 }
 
 #[cw_serde]

@@ -48,7 +48,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::SetSubDenom { subdenom } => set_subdenom(deps, info, subdenom),
-        ExecuteMsg::Claim { proof, amount } => claim(deps, env, info, proof, amount),
+        ExecuteMsg::Claim { proof, amount, claimer_addr } => claim(deps, env, info, proof, amount, claimer_addr),
     }
 }
 
@@ -97,11 +97,13 @@ pub fn claim(
     info: MessageInfo,
     proof_str: String,
     amount: Uint128,
+    claimer_addr: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage).unwrap();
 
-    let sender = info.sender.as_str();
-    let claim = format!("{}{}", sender, amount.to_string());
+    // TODO: validate claimer_addr is an actual account
+
+    let claim = format!("{}{}", claimer_addr, amount.to_string());
 
     let claim_check = CLAIM.may_load(deps.storage, &claim)?;
     if claim_check.is_some() {
@@ -118,6 +120,8 @@ pub fn claim(
     deps.api.debug(&format!("claim {0}", &claim));
 
     verify_proof(&config.merkle_root, &proof_str, &claim)?;
+
+    deps.api.debug(&"validation passed");
 
     let subdenom = SUBDENOM.load(deps.storage)?;
 
