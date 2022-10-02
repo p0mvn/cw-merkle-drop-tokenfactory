@@ -38,7 +38,7 @@ systemctl stop osmosisd
 if [ -z $2 ];
 then
     echo "no height provided, exporting latest height"
-    osmosisd export --modules-to-export="lockup,bank,gamm,staking" 2> export.json
+    osmosisd export --modules-to-export="staking" 2> export.json
 
 elif [ $2 -gt $latestHeight ];
 then
@@ -52,7 +52,7 @@ then
 
 else
     echo "height $2 provided, exporting height $2"
-    osmosisd export --modules-to-export="lockup,bank,gamm,staking" --height $2 2> export.json
+    osmosisd export --modules-to-export="staking" --height $2 2> export.json
 fi
 
 echo "starting osmosisd"
