@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        workdir: [./x/ibc-rate-limit]
+        workdir: [./]
 
     steps:
       - name: Checkout sources
