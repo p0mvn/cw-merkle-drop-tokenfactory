@@ -37,12 +37,12 @@ macro_rules! test_claim {
     ($test_name:ident should succeed, proof: $proof:expr, amount: $amount:expr) => {
         #[test]
         fn $test_name() {
-            test_set_route_success_case($proof, $amount)
+            test_claim_success_case($proof, $amount)
         }
     };
 }
 
-fn test_set_route_success_case(proof: String, amount: Uint128) {
+fn test_claim_success_case(proof: String, amount: Uint128) {
     let TestEnv {
         app,
         contract_address,

@@ -4,6 +4,8 @@ use osmosis_std::types::osmosis::tokenfactory::v1beta1::MsgMintResponse;
 use crate::ContractError;
 
 pub fn handle_mint_reply(deps: DepsMut, msg: Reply) -> Result<Response, ContractError> {
+    deps.api.debug(&"mint reply reached");
+
     if let SubMsgResult::Ok(SubMsgResponse {
         data: Some(b),
         events,
