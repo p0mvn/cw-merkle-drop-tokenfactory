@@ -11,9 +11,9 @@ use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, QueryDenomAuth
 use osmosis_std::types::cosmos::base::v1beta1;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, GetRootResponse, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, GetRootResponse, InstantiateMsg, QueryMsg, GetSubDenomResponse};
 use crate::reply::handle_mint_reply;
-use crate::state::{Config, CONFIG, CLAIM};
+use crate::state::{Config, CONFIG, CLAIM, SUBDENOM};
 use crate::execute::{verify_proof};
 
 // version info for migration info
@@ -49,12 +49,12 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::SetDenom { subdenom } => set_denom(deps, info, subdenom),
+        ExecuteMsg::SetSubDenom { subdenom } => set_subdenom(deps, info, subdenom),
         ExecuteMsg::Claim { proof, amount } => claim(deps, env, info, proof, amount),
     }
 }
 
-pub fn set_denom(deps: DepsMut, info: MessageInfo, subdenom: String) -> Result<Response, ContractError> {
+pub fn set_subdenom(deps: DepsMut, info: MessageInfo, subdenom: String) -> Result<Response, ContractError> {
 
     let config = CONFIG.load(deps.storage)?;
 
@@ -63,9 +63,9 @@ pub fn set_denom(deps: DepsMut, info: MessageInfo, subdenom: String) -> Result<R
         return Err(ContractError::Unauthorized {  })
     }
 
-    // validate subdenom and that owner is admin
+    // validate subdenom and that sender is admin
     let tf_querier = TokenfactoryQuerier::new(&deps.querier);
-    let response = tf_querier.denom_authority_metadata(format!("tokenfactory/{}/{}", config.owner, subdenom))?;
+    let response = tf_querier.denom_authority_metadata(format!("tokenfactory/{}/{}", info.sender, subdenom))?;
     
     if response.authority_metadata.is_none() {
         return Err(ContractError::Std(StdError::GenericErr { msg: String::from("invalid authority metadata") }))
@@ -73,11 +73,21 @@ pub fn set_denom(deps: DepsMut, info: MessageInfo, subdenom: String) -> Result<R
 
     let auth_metadata = response.authority_metadata.unwrap();
 
-    if auth_metadata.admin.eq(&config.owner) {
+    if auth_metadata.admin.eq(&info.sender) {
         return Err(ContractError::Unauthorized {  })
     }
 
-    Ok(Response::default())
+    SUBDENOM.save(deps.storage, &subdenom)?;
+
+    deps.api.debug(&format!(
+        "saved subdenom {0}", &subdenom
+    ));
+
+    Ok(Response::new()
+    .add_attribute("method", "set_subdenom")
+    .add_attribute("owner", info.sender)
+    .add_attribute("subdenom", subdenom))
+    
 }
 
 pub fn claim(
@@ -140,6 +150,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetRoot {} => to_binary(&query_root(deps)?),
+        QueryMsg::GetSubdenom {  } => to_binary(&query_subdenom(deps)?)
     }
 }
 
@@ -147,6 +158,18 @@ fn query_root(deps: Deps) -> StdResult<GetRootResponse> {
     let config = CONFIG.load(deps.storage)?;
     Ok(GetRootResponse {
         root: config.merkle_root,
+    })
+}
+
+fn query_subdenom(deps: Deps) -> StdResult<GetSubDenomResponse> {
+    let subdenom = SUBDENOM.load(deps.storage)?;
+
+    deps.api.debug(&format!(
+        "returning subdenom {0}", &subdenom
+    ));
+
+    Ok(GetSubDenomResponse {
+        subdenom: subdenom,
     })
 }
 

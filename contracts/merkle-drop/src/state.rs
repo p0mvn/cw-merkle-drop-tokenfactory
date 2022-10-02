@@ -12,4 +12,6 @@ pub struct Config {
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
+pub const SUBDENOM: Item<String> = Item::new("subdenom");
+
 pub const CLAIM: Map<&str, bool> = Map::new("claimed");

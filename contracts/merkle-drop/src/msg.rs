@@ -10,7 +10,7 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    SetDenom {
+    SetSubDenom {
         subdenom: String,
     },
     Claim {
@@ -24,10 +24,16 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(GetRootResponse)]
     GetRoot {},
+    #[returns(GetSubDenomResponse)]
+    GetSubdenom {},
 }
 
-// We define a custom struct for each query response
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct GetRootResponse {
     pub root: String,
+}
+
+#[cw_serde]
+pub struct GetSubDenomResponse {
+    pub subdenom: String,
 }
