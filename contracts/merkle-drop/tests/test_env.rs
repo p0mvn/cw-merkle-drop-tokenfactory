@@ -9,7 +9,7 @@ use merkle_drop::msg::InstantiateMsg;
 
 const TEST_ROOT: &str = "Nz54SQtyBVHwsmEqNI//mxFgiq8MRD7sS92IGkhgMvo=";
 
-const VALID_SUBDENOM: &str = "subdenom";
+pub const VALID_SUBDENOM: &str = "subdenom";
 
 pub struct TestEnv {
     pub app: OsmosisTestApp,
