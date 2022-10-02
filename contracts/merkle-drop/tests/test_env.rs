@@ -11,6 +11,7 @@ pub struct TestEnv {
     pub app: OsmosisTestApp,
     pub contract_address: String,
     pub owner: SigningAccount,
+    pub valid_sender: SigningAccount,
 }
 impl TestEnv {
     pub fn new() -> Self {
@@ -25,6 +26,8 @@ impl TestEnv {
             Coin::new(1_000_000_000_000, "stake"),
         ];
         let owner = app.init_account(&initial_balance).unwrap();
+
+        let valid_sender = app.init_account(&initial_balance).unwrap();
 
         let code_id = wasm
             .store_code(&get_wasm(), None, &owner)
@@ -51,6 +54,7 @@ impl TestEnv {
             app,
             contract_address,
             owner,
+            valid_sender
         }
     }
 }

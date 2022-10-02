@@ -11,13 +11,8 @@ test_claim!(
     claim
     should succeed,
 
-    
-    sender = Owner,
-    msg = ExecuteMsg::Claim {
-        proof: String::from(VALID_PROOF_STR),
-        amount: Coin { denom: String::from("uosmo"), amount: Uint128::from(503 as u128) }
-    },
-    claimer_addr: &String::from("osmo1000xz25ydz8h9rwgnv30l9p0x500dvj0wv50ft")
+    proof: String::from(VALID_PROOF_STR),
+    amount: Coin { denom: String::from("uosmo"), amount: Uint128::from(503 as u128) }
 );
 
 // test_set_route!(
@@ -39,37 +34,26 @@ test_claim!(
 
 #[macro_export]
 macro_rules! test_claim {
-    ($test_name:ident should succeed, sender = Owner, msg = $msg:expr, claimer_addr: $claimer_addr:expr) => {
+    ($test_name:ident should succeed, proof: $proof:expr, amount: $amount:expr) => {
         #[test]
         fn $test_name() {
-            test_set_route_success_case($msg, $claimer_addr)
-        }
-    };
-
-    ($test_name:ident should failed_with $err:expr, sender = $sender:ident, msg = $msg:expr) => {
-        #[test]
-        fn $test_name() {
-            test_set_route_failed_case(Sender::$sender, $msg, $err)
+            test_set_route_success_case($proof, $amount)
         }
     };
 }
 
-enum Sender {
-    Owner,
-    NonOwner,
-}
-
-fn test_set_route_success_case(msg: ExecuteMsg, claimer_addr: &str) {
+fn test_set_route_success_case(proof: String, amount: Coin) {
     let TestEnv {
         app,
         contract_address,
         owner,
+        valid_sender,
     } = TestEnv::new();
 
-    
+    let msg = ExecuteMsg::Claim { proof: proof, amount: amount };
 
     let wasm = Wasm::new(&app);
-    let res = wasm.execute(&contract_address, &msg, &[], &owner);
+    let res = wasm.execute(&contract_address, &msg, &[], &valid_sender);
 
     // check if execution succeeded
     assert!(res.is_ok(), "{:?}", res.unwrap_err());
