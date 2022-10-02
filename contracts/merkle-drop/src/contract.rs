@@ -1,7 +1,9 @@
+use std::error::Error;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg
+    to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg, Reply, StdError
 };
 use cw2::set_contract_version;
 use osmosis_std::types::osmosis::tokenfactory::v1beta1::MsgMint;
@@ -9,6 +11,7 @@ use osmosis_std::types::cosmos::base::v1beta1;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, GetMerkleRootResponse, InstantiateMsg, QueryMsg};
+use crate::reply::handle_mint_reply;
 use crate::state::{Config, CONFIG, CLAIM};
 use crate::execute::{verify_proof};
 
@@ -80,7 +83,17 @@ pub fn claim(
 
     Ok(Response::new()
     .add_attribute("action", "claim")
-    .add_submessage(SubMsg::reply_on_success(mint_msg, MINT_MSG_ID)))
+    .add_submessage(SubMsg::reply_always(mint_msg, MINT_MSG_ID)))
+}
+
+/// Handling submessage reply.
+/// For more info on submessage and reply, see https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#submessages
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        MINT_MSG_ID => handle_mint_reply(deps, msg),
+        id => Err(ContractError::UnknownReplyId { reply_id: id }),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

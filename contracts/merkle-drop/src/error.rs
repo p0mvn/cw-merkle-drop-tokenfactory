@@ -17,4 +17,10 @@ pub enum ContractError {
 
     #[error("{claim:?} already claimed")]
     AlreadyClaimed { claim: String },
+
+    #[error("{reply_id:?} unknown reply id")]
+    UnknownReplyId { reply_id: u64 },
+
+    #[error("")]
+    FailedToMint { },
 }
