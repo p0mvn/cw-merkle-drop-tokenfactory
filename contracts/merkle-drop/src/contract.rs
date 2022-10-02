@@ -78,8 +78,10 @@ pub fn set_subdenom(
 
     // validate that subdenom exists and that contract is admin
     let tf_querier = TokenfactoryQuerier::new(&deps.querier);
+    let full_denom = format!("factory/{}/{}", info.sender, subdenom);
+    deps.api.debug(&format!("set_subdenom full_denom: claim end: {}", full_denom));
     let response = tf_querier
-        .denom_authority_metadata(format!("factory/{}/{}", info.sender, subdenom))?;
+        .denom_authority_metadata(full_denom)?;
 
     if response.authority_metadata.is_none() {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -137,10 +139,18 @@ pub fn claim(
 
     let subdenom = SUBDENOM.load(deps.storage)?;
 
+    let full_denom = format!("factory/{}/{}", config.owner, subdenom);
+    deps.api.debug(&format!("claim full_denom: claim end: {}", full_denom));
+
+    let tf_querier = TokenfactoryQuerier::new(&deps.querier);
+    let admin = tf_querier
+        .denom_authority_metadata(full_denom.clone())?.authority_metadata.unwrap().admin;
+    deps.api.debug(&format!("claim admin = {admin:?}"));
+
     let mint_msg = MsgMint {
         sender: env.contract.address.to_string(),
         amount: Some(v1beta1::Coin {
-            denom: format!("tokenfactory/{}/{}", config.owner, subdenom),
+            denom: full_denom,
             amount: amount.to_string(),
         }),
     };
@@ -151,7 +161,7 @@ pub fn claim(
 
     Ok(Response::new()
         .add_attribute("action", "claim")
-        .add_submessage(SubMsg::reply_always(mint_msg, MINT_MSG_ID)))
+        .add_submessage(SubMsg::reply_on_success(mint_msg, MINT_MSG_ID)))
 }
 
 /// Handling submessage reply.

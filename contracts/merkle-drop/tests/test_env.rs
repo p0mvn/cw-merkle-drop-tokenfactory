@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use cosmwasm_std::Coin;
-use merkle_drop::msg::InstantiateMsg;
+use merkle_drop::msg::{InstantiateMsg, QueryMsg};
 use osmosis_std::types::osmosis::tokenfactory;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgCreateDenomResponse, MsgChangeAdminResponse, MsgChangeAdmin};
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgCreateDenomResponse, MsgChangeAdminResponse, MsgChangeAdmin, QueryDenomAuthorityMetadataRequest, QueryDenomAuthorityMetadataResponse};
 use osmosis_testing::{Account, ExecuteResponse, OsmosisTestApp, Runner, SigningAccount};
 use osmosis_testing::{Gamm, Module, Wasm};
 
@@ -62,16 +62,28 @@ impl TestEnv {
             .data
             .address;
 
+        let full_denom = format!("factory/{}/{}", valid_creator.address(), VALID_SUBDENOM);
+
         // Simulate authz Grant by changing admin to contract address
         let change_admin_msg = tokenfactory::v1beta1::MsgChangeAdmin {
             sender: valid_creator.address(),
-            denom: format!("factory/{}/{}", valid_creator.address(), VALID_SUBDENOM),
+            denom: full_denom.clone(),
             new_admin: contract_address.clone(),
         };
 
         let _res: ExecuteResponse<MsgChangeAdminResponse> = app
         .execute(change_admin_msg, MsgChangeAdmin::TYPE_URL, &valid_creator)
         .unwrap();
+
+        let admin_query = QueryDenomAuthorityMetadataRequest{
+            denom: full_denom,
+        };
+
+        let admin = app.query::<QueryDenomAuthorityMetadataRequest, QueryDenomAuthorityMetadataResponse> ("/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata", &admin_query).unwrap().authority_metadata.unwrap().admin;
+
+        if !admin.eq(&contract_address) {
+            panic!("{}", format!("admin from response {} is not equal to contract address {}", admin, contract_address));
+        }
 
         TestEnv {
             app,
