@@ -1,6 +1,6 @@
 mod test_env;
-use cosmwasm_std::{Uint128};
-use merkle_drop::msg::{ExecuteMsg};
+use cosmwasm_std::{Coin, Uint128};
+use merkle_drop::msg::ExecuteMsg;
 use osmosis_testing::{Module, Wasm};
 use test_env::*;
 
@@ -52,15 +52,18 @@ fn test_claim_success_case(proof: String, amount: Uint128) {
         app,
         contract_address,
         owner,
-        valid_sender,
     } = TestEnv::new();
 
     let set_subdenom_msg = ExecuteMsg::SetSubDenom {
         subdenom: String::from(VALID_SUBDENOM),
     };
-
+    // setup denum from owner address
     let wasm = Wasm::new(&app);
-    let res = wasm.execute(&contract_address, &set_subdenom_msg, &[], &owner);
+    let _res = wasm.execute(&contract_address, &set_subdenom_msg, &[], &owner);
+
+    // claim from a new address
+    let initial_balance = [Coin::new(1_000_000_000_000, "uosmo")];
+    let claim_sender = app.init_account(&initial_balance).unwrap();
 
     let msg = ExecuteMsg::Claim {
         proof: proof,
@@ -69,7 +72,7 @@ fn test_claim_success_case(proof: String, amount: Uint128) {
     };
 
     let wasm = Wasm::new(&app);
-    let res = wasm.execute(&contract_address, &msg, &[], &valid_sender);
+    let res = wasm.execute(&contract_address, &msg, &[], &claim_sender);
 
     // check if execution succeeded
     assert!(res.is_ok(), "{:?}", res.unwrap_err());

@@ -11,6 +11,7 @@ pub fn handle_mint_reply(deps: DepsMut, msg: Reply) -> Result<Response, Contract
         events,
     }) = msg.result
     {
+        deps.api.debug(&"mint reply parsing response");
         // make sure we parse the desired response correctly.
         let _res: MsgMintResponse = b.try_into().map_err(ContractError::Std)?;
 
