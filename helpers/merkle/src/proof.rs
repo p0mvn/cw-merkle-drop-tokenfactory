@@ -47,12 +47,12 @@ impl Proof {
         return result.unwrap().eq(root);
     }
 
-    pub fn get_entry_at(&self, index: usize) -> &Entry {
-        return &self.0[index];
+    pub fn get_entry_at(&self, index: u128) -> &Entry {
+        return &self.0[index as usize];
     }
 
-    pub fn get_num_entries(&self) -> usize {
-        return self.0.len();
+    pub fn get_num_entries(&self) -> u128 {
+        return self.0.len() as u128;
     }
 }
 

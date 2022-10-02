@@ -3,7 +3,7 @@ use merkle::{proof::Proof, hash::Hash};
 use crate::{ContractError};
 
 pub fn verify_proof(merkle_root: &String, proof_str: &String, to_verify: &String) -> Result<(), ContractError> {
-    let proof: Proof = serde_json::from_str(proof_str).unwrap();
+    let proof: Proof = serde_json_wasm::from_str(proof_str).unwrap();
     let root = match base64::decode(merkle_root) {
         Ok(f)=> {
             f
@@ -18,6 +18,7 @@ pub fn verify_proof(merkle_root: &String, proof_str: &String, to_verify: &String
     if !proof.verify(to_verify, &root_hash) {
         return Err(ContractError::FailedVerifyProof {  })
     }
+
 
     Ok(())
 }

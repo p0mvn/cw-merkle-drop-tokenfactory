@@ -5,6 +5,8 @@ use osmosis_testing::{Account, OsmosisTestApp, SigningAccount};
 use osmosis_testing::{Gamm, Module, Wasm};
 use merkle_drop::msg::InstantiateMsg;
 
+const TEST_ROOT: &str = "Nz54SQtyBVHwsmEqNI//mxFgiq8MRD7sS92IGkhgMvo=";
+
 pub struct TestEnv {
     pub app: OsmosisTestApp,
     pub contract_address: String,
@@ -34,7 +36,7 @@ impl TestEnv {
             .instantiate(
                 code_id,
                 &InstantiateMsg {
-                    merkle_root: String::from("",),
+                    merkle_root: String::from(TEST_ROOT),
                 },
                 Some(&owner.address()),
                 None,

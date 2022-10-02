@@ -5,7 +5,7 @@ pub mod proof;
 
 #[derive(Debug)]
 pub struct Tree {
-    leaf_count: usize,
+    leaf_count: u128,
     nodes: Vec<hash::Hash>,
 }
 
@@ -19,7 +19,7 @@ impl Tree {
         }
 
         let mut nodes: Vec<hash::Hash> = builder::build_leaf_level(items);
-        let leaf_count = nodes.len();
+        let leaf_count = nodes.len() as u128;
 
         builder::build_branch_levels(&mut nodes);
 
@@ -69,14 +69,14 @@ impl Tree {
             is_left_sibling = current_index % 2 == 1;
             if is_left_sibling {
                 // if current_index node is on the right, we need its left sibling
-                sibling_hash = self.nodes[level_start + current_index - 1];
+                sibling_hash = self.nodes[(level_start + current_index - 1) as usize];
             } else if current_index + 1 == level_length {
                 // if current_index node is on the left but there is no right sibling
                 // grab itself for proof.
-                sibling_hash = self.nodes[level_start + current_index];
+                sibling_hash = self.nodes[(level_start + current_index) as usize];
             } else {
                 // current_index node is on the left, grab its right sibling
-                sibling_hash = self.nodes[level_start + current_index + 1];
+                sibling_hash = self.nodes[(level_start + current_index + 1) as usize];
             }
 
             proof.push(is_left_sibling, sibling_hash);
@@ -90,12 +90,12 @@ impl Tree {
     }
 
     #[allow(dead_code)]
-    fn get_node_count(&self) -> usize {
-        return self.nodes.len();
+    fn get_node_count(&self) -> u128 {
+        return self.nodes.len() as u128;
     }
 
     #[allow(dead_code)]
-    fn get_leaf_count(&self) -> Result<usize, String> {
+    fn get_leaf_count(&self) -> Result<u128, String> {
         if self.leaf_count > self.get_node_count() {
             return Err(format!(
                 "leaf count ({}) is greater than node count ({})",
@@ -107,7 +107,7 @@ impl Tree {
     }
 
     #[allow(dead_code)]
-    fn get_node_at(&self, index: usize) -> Result<hash::Hash, String> {
+    fn get_node_at(&self, index: u128) -> Result<hash::Hash, String> {
         if index >= self.get_node_count() {
             return Err(format!(
                 "requested index ({}) is greater than node count ({})",
@@ -115,7 +115,7 @@ impl Tree {
                 self.get_node_count()
             ));
         }
-        return Ok(self.nodes[index]);
+        return Ok(self.nodes[index as usize]);
     }
 }
 

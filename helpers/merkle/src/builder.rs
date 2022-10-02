@@ -2,7 +2,7 @@ use crate::hash;
 
 /// TODO: spec and tests
 pub fn build_leaf_level<T: AsRef<[u8]>>(items: &[T]) -> Vec<hash::Hash> {
-    let mut nodes: Vec<hash::Hash> = Vec::with_capacity(calculate_tree_capacity(items));
+    let mut nodes: Vec<hash::Hash> = Vec::new();
     for item in items.iter() {
         let item = item.as_ref();
         let hash = hash::leaf(item);
@@ -20,19 +20,19 @@ pub fn build_leaf_level<T: AsRef<[u8]>>(items: &[T]) -> Vec<hash::Hash> {
 // mutates the parameter by pushing the new nodes onto it.
 // CONTRACT: nodes are sorted in incrasing order.
 pub fn build_branch_levels(nodes: &mut Vec<hash::Hash>) {
-    let mut previous_level_length = nodes.len();
+    let mut previous_level_length = nodes.len() as u128;
     let mut current_level_length = get_next_level_length(previous_level_length);
     let mut previous_level_start = 0;
     while current_level_length > 0 {
         for i in 0..current_level_length {
             let previous_level_index = 2 * i;
-            let nodes_index: usize = previous_level_start + previous_level_index;
-            let left_sibling = &nodes[nodes_index];
+            let nodes_index: u128 = previous_level_start + previous_level_index;
+            let left_sibling = &nodes[nodes_index as usize];
 
             let right_sibling = if previous_level_index + 1 >= previous_level_length {
-                &nodes[nodes_index] // For the case where the number of nodes at a level is odd.
+                &nodes[nodes_index as usize] // For the case where the number of nodes at a level is odd.
             } else {
-                &nodes[nodes_index + 1]
+                &nodes[(nodes_index + 1) as usize]
             };
 
             let hash = hash::branch(left_sibling, right_sibling);
@@ -46,7 +46,7 @@ pub fn build_branch_levels(nodes: &mut Vec<hash::Hash>) {
 
 /// TODO: spec
 #[inline]
-pub fn get_next_level_length(level_len: usize) -> usize {
+pub fn get_next_level_length(level_len: u128) -> u128 {
     if level_len == 1 {
         0
     } else {
@@ -55,15 +55,15 @@ pub fn get_next_level_length(level_len: usize) -> usize {
 }
 
 /// TODO: spec
-fn calculate_tree_capacity<T>(items: &[T]) -> usize {
-    let leaves_count = items.len();
-    let branch_node_count = round_up_power_of_two(items.len());
+fn calculate_tree_capacity<T>(items: &[T]) -> u128 {
+    let leaves_count = items.len() as u128;
+    let branch_node_count = round_up_power_of_two(items.len() as u128);
     return leaves_count + branch_node_count;
 }
 
 /// round_up_power_of_two returns the next power of two
 /// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-fn round_up_power_of_two(n: usize) -> usize {
+fn round_up_power_of_two(n: u128) -> u128 {
     let mut v = n;
     v -= 1;
     v |= v >> 1;
@@ -105,14 +105,14 @@ mod tests {
 
     #[test]
     fn tree_capacity() {
-        let mut tests: HashMap<usize, Vec<&str>> = HashMap::new();
+        let mut tests: HashMap<u128, Vec<&str>> = HashMap::new();
         tests.insert(8, vec!["node", "node", "node", "node"]);
         tests.insert(7, vec![ "node", "node", "node"]);
         tests.insert(13, vec!["node", "node", "node", "node", "node"]);
         tests.insert(2024, vec!["node"; 1000]);
 
         for tc in tests {
-            let expected = tc.1.len() + round_up_power_of_two(tc.1.len());
+            let expected = (tc.1.len() as u128) + round_up_power_of_two(tc.1.len() as u128);
             assert_eq!(tc.0, expected);
         }
     }

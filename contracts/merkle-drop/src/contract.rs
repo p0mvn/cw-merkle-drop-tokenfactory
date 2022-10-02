@@ -69,7 +69,19 @@ pub fn claim(
         return Err(ContractError::AlreadyClaimed { claim: claim.clone() })
     }
 
-    verify_proof(&config.merkle_root, &claim, &proof_str)?;
+    deps.api.debug(&format!(
+        "merkle_root {0}", &config.merkle_root
+    ));
+
+    deps.api.debug(&format!(
+        "proof_str {0}", &proof_str
+    ));
+
+    deps.api.debug(&format!(
+        "claim {0}", &claim
+    ));
+
+    verify_proof(&config.merkle_root, &proof_str, &claim)?;
 
     let mint_msg = MsgMint{
         sender: env.contract.address.to_string(),

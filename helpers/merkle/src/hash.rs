@@ -10,10 +10,8 @@ use sha3::{Digest, Sha3_256};
 const LEAF_NODE_PREFIX: &[u8] = &[0];
 const BRANCH_NODE_PREFIX: &[u8] = &[1];
 
-pub const HASH_BYTES: usize = 32;
-
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Default)]
-pub struct Hash(pub(crate) [u8; HASH_BYTES]);
+pub struct Hash(pub(crate) [u8; 32]);
 
 // Serialize for Entry is the custom serialization implementation.
 // Since plain-text SHA3 hash might not be exclusive to the ASCII set,
@@ -27,7 +25,7 @@ impl Serialize for Hash {
         let hash = base64::encode(self);
         let bytes = hash.as_bytes();
 
-        serializer.serialize_bytes(bytes)
+        serializer.serialize_some(bytes)
     }
 }
 
@@ -76,7 +74,7 @@ impl AsRef<[u8]> for Hash {
 
 impl From<Vec<u8>> for Hash {
     fn from(item: Vec<u8>) -> Self {
-        Hash(<[u8; HASH_BYTES]>::try_from(item.as_slice()).unwrap())
+        Hash(<[u8; 32]>::try_from(item.as_slice()).unwrap())
     }
 }
 
@@ -93,7 +91,7 @@ impl Hasher {
     fn result(self) -> Hash {
         // At the time of this writing, the sha2 library is stuck on an old version
         // of generic_array (0.9.0). Decouple ourselves with a clone to our version.
-        Hash(<[u8; HASH_BYTES]>::try_from(self.hasher.finalize().as_slice()).unwrap())
+        Hash(<[u8; 32]>::try_from(self.hasher.finalize().as_slice()).unwrap())
     }
 }
 
@@ -126,8 +124,8 @@ mod tests {
     fn custom_serialization_works() {
         let test_entry = leaf(test_util::OSMO);
 
-        let serialized = serde_json::to_string(&test_entry).unwrap();
-        let deserialized: Hash = serde_json::from_str(&serialized).unwrap();
+        let serialized = serde_json_wasm::to_string(&test_entry).unwrap();
+        let deserialized: Hash = serde_json_wasm::from_str(&serialized).unwrap();
 
         assert_eq!(test_entry, deserialized);
     }
