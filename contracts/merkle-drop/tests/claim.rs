@@ -15,6 +15,11 @@ test_claim!(
     amount: Uint128::from(1421901 as u128)
 );
 
+// TODO:
+// tests:
+// subdenom does not exist in store / (set_denom is not called prior to claim)
+// tokenfactory denom does not exist
+
 // test_set_route!(
 //     set_initial_route_by_non_owner
 //     should failed_with "Unauthorized: execute wasm contract failed",
@@ -49,6 +54,13 @@ fn test_claim_success_case(proof: String, amount: Uint128) {
         owner,
         valid_sender,
     } = TestEnv::new();
+
+    let set_subdenom_msg = ExecuteMsg::SetSubDenom {
+        subdenom: String::from(VALID_SUBDENOM),
+    };
+
+    let wasm = Wasm::new(&app);
+    let res = wasm.execute(&contract_address, &set_subdenom_msg, &[], &owner);
 
     let msg = ExecuteMsg::Claim {
         proof: proof,

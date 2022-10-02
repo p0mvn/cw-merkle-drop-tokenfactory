@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use cosmwasm_std::Coin;
 use merkle_drop::msg::InstantiateMsg;
 use osmosis_std::types::osmosis::tokenfactory;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgCreateDenomResponse};
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgCreateDenomResponse, MsgChangeAdminResponse, MsgChangeAdmin};
 use osmosis_testing::{Account, ExecuteResponse, OsmosisTestApp, Runner, SigningAccount};
 use osmosis_testing::{Gamm, Module, Wasm};
 
@@ -20,7 +20,6 @@ pub struct TestEnv {
 impl TestEnv {
     pub fn new() -> Self {
         let app = OsmosisTestApp::new();
-        let gamm = Gamm::new(&app);
         let wasm = Wasm::new(&app);
 
         // setup owner account
@@ -31,15 +30,15 @@ impl TestEnv {
         ];
         let owner = app.init_account(&initial_balance).unwrap();
 
-        let valid_sender = app.init_account(&initial_balance).unwrap();
+        let valid_creator = app.init_account(&initial_balance).unwrap();
 
+        // Create denom
         let create_denom_msg = tokenfactory::v1beta1::MsgCreateDenom {
-            sender: valid_sender.address(),
+            sender: valid_creator.address(),
             subdenom: String::from(VALID_SUBDENOM),
         };
-
         let _res: ExecuteResponse<MsgCreateDenomResponse> = app
-            .execute(create_denom_msg, MsgCreateDenom::TYPE_URL, &valid_sender)
+            .execute(create_denom_msg, MsgCreateDenom::TYPE_URL, &valid_creator)
             .unwrap();
 
         let code_id = wasm
@@ -63,11 +62,22 @@ impl TestEnv {
             .data
             .address;
 
+        // Simulate authz Grant by changing admin to contract address
+        let change_admin_msg = tokenfactory::v1beta1::MsgChangeAdmin {
+            sender: valid_creator.address(),
+            denom: format!("factory/{}/{}", valid_creator.address(), VALID_SUBDENOM),
+            new_admin: contract_address.clone(),
+        };
+
+        let _res: ExecuteResponse<MsgChangeAdminResponse> = app
+        .execute(change_admin_msg, MsgChangeAdmin::TYPE_URL, &valid_creator)
+        .unwrap();
+
         TestEnv {
             app,
             contract_address,
             owner,
-            valid_sender,
+            valid_sender: valid_creator,
         }
     }
 }

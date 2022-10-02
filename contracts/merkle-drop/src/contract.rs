@@ -6,13 +6,24 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use osmosis_std::types::cosmos::base::v1beta1;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, TokenfactoryQuerier};
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, MsgChangeAdmin, TokenfactoryQuerier};
 
 use crate::error::ContractError;
 use crate::execute::verify_proof;
 use crate::msg::{ExecuteMsg, GetRootResponse, GetSubDenomResponse, InstantiateMsg, QueryMsg};
 use crate::reply::handle_mint_reply;
 use crate::state::{Config, CLAIM, CONFIG, SUBDENOM};
+
+// type Grant struct {
+// 	Authorization *types.Any `protobuf:"bytes,1,opt,name=authorization,proto3" json:"authorization,omitempty"`
+// 	Expiration    time.Time  `protobuf:"bytes,2,opt,name=expiration,proto3,stdtime" json:"expiration"`
+// }
+
+// pub struct GrantMsg {
+//     Granter string `protobuf:"bytes,1,opt,name=granter,proto3" json:"granter,omitempty"`
+// 	Grantee string `protobuf:"bytes,2,opt,name=grantee,proto3" json:"grantee,omitempty"`
+// 	Grant   Grant  `protobuf:"bytes,3,opt,name=grant,proto3" json:"grant"`
+// }
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
@@ -47,13 +58,14 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::SetSubDenom { subdenom } => set_subdenom(deps, info, subdenom),
+        ExecuteMsg::SetSubDenom { subdenom } => set_subdenom(deps, env, info, subdenom),
         ExecuteMsg::Claim { proof, amount, claimer_addr } => claim(deps, env, info, proof, amount, claimer_addr),
     }
 }
 
 pub fn set_subdenom(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     subdenom: String,
 ) -> Result<Response, ContractError> {
@@ -64,10 +76,10 @@ pub fn set_subdenom(
         return Err(ContractError::Unauthorized {});
     }
 
-    // validate subdenom and that sender is admin
+    // validate that subdenom exists and that contract is admin
     let tf_querier = TokenfactoryQuerier::new(&deps.querier);
     let response = tf_querier
-        .denom_authority_metadata(format!("tokenfactory/{}/{}", info.sender, subdenom))?;
+        .denom_authority_metadata(format!("factory/{}/{}", info.sender, subdenom))?;
 
     if response.authority_metadata.is_none() {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -77,7 +89,7 @@ pub fn set_subdenom(
 
     let auth_metadata = response.authority_metadata.unwrap();
 
-    if auth_metadata.admin.eq(&info.sender) {
+    if auth_metadata.admin.eq(&env.contract.address) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -135,6 +147,8 @@ pub fn claim(
 
     CLAIM.save(deps.storage, &claim, &true)?;
 
+    deps.api.debug(&"claim end");
+
     Ok(Response::new()
         .add_attribute("action", "claim")
         .add_submessage(SubMsg::reply_always(mint_msg, MINT_MSG_ID)))
@@ -144,6 +158,7 @@ pub fn claim(
 /// For more info on submessage and reply, see https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#submessages
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    deps.api.debug(&"reply reached");
     match msg.id {
         MINT_MSG_ID => handle_mint_reply(deps, msg),
         id => Err(ContractError::UnknownReplyId { reply_id: id }),
