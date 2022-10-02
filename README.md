@@ -6,9 +6,11 @@ TODO
 
 ## Prerequisits
 
-* Have osmosisd running as a systemctl service named osmosisd.service
+1. Have osmosisd running as a systemctl service named osmosisd.service
 
-* Ensure you have enough state to export the account balances at the desired height
+  * This can be done automatically with the following command: `source <(curl -sL https://get.osmosis.zone/run)`. Choose the full node option and at the end choose to run a osmosisd service (not a cosmovisor service for this to work out of the box)
+
+2. Ensure you have enough state to export the account balances at the desired height
 
 ## Instructions
 
@@ -26,7 +28,7 @@ Give the script execution permissions
 chmod +x ./helpers/create-csv.sh
 ```
 
-Run the script
+Run the script. Without any inputs, this will give you a csv of all accounts that have staked greater than 0 OSMO at the latest block height you have on your full node.
 
 ```bash
 ./helpers/create-csv.sh
@@ -40,4 +42,6 @@ Optionally, you can provide two inputs: the minimum staked amount and the export
 
 This provides you with the final airdrop file in the following location:
 
-* ~/.osmosisd/airdrop.csv
+```bash
+cat ~/.osmosisd/airdrop.csv
+```
