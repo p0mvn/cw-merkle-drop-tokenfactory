@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        contract: [{workdir: ./, output: testdata/markle_drop.wasm, build: artifacts/merkle_drop-x86_64.wasm, name: merkle_drop}]
+        contract: [{workdir: ./, output: testdata/merkle_drop.wasm, build: artifacts/merkle_drop-x86_64.wasm, name: merkle_drop}]
 
     steps:
       - name: Checkout sources
