@@ -6,7 +6,7 @@ use cosmwasm_std::{
     to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg, Reply, StdError
 };
 use cw2::set_contract_version;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::MsgMint;
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, QueryDenomAuthorityMetadataRequest};
 use osmosis_std::types::cosmos::base::v1beta1;
 
 use crate::error::ContractError;
@@ -48,8 +48,27 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::SetDenom { subdenom } => set_denom(deps, info, subdenom),
         ExecuteMsg::Claim { proof, amount } => claim(deps, env, info, proof, amount),
     }
+}
+
+pub fn set_denom(deps: DepsMut, info: MessageInfo, subdenom: String) -> Result<Response, ContractError> {
+
+    let config = CONFIG.load(deps.storage)?;
+
+    // validate sender
+    if config.owner != info.sender {
+        return Err(ContractError::Unauthorized {  })
+    }
+
+    // validate subdenom and that owner is admin
+
+    // let query = QueryDenomAuthorityMetadataRequest{
+    //     denom
+    // };
+
+    Ok(Response::default())
 }
 
 pub fn claim(
