@@ -8,6 +8,10 @@ test_set_denom!(
     should succeed
 );
 
+// TODO: add edge case tests:
+// - non-owner
+// - contract owner but there is no denom created
+
 // ======= helpers ========
 
 #[macro_export]
