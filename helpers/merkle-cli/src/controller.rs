@@ -2,7 +2,7 @@ use base64;
 
 use merkle::hash;
 use merkle::Tree;
-use serde_json;
+use serde_json_wasm;
 use std::error::Error;
 
 pub fn generate_root(data: &Vec<Vec<u8>>) -> String {
@@ -28,7 +28,7 @@ pub fn get_proof(data: &Vec<Vec<u8>>, proof_for: &Vec<u8>) -> Result<String, Box
 
     let proof = proof_opt.unwrap();
 
-    let serialized = serde_json::to_string(&proof)?;
+    let serialized = serde_json_wasm::to_string(&proof)?;
 
     Ok(serialized)
 }
@@ -38,7 +38,7 @@ pub fn verify_proof(
     proof_bytes: &String,
     to_verify: &String,
 ) -> Result<bool, Box<dyn Error>> {
-    let proof: merkle::proof::Proof = serde_json::from_str(&proof_bytes)?;
+    let proof: merkle::proof::Proof = serde_json_wasm::from_str(&proof_bytes)?;
     let root_decoded = base64::decode(root)?;
 
     proof.verify(to_verify, &merkle::hash::Hash::from(root_decoded));

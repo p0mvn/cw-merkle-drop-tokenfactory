@@ -9,5 +9,5 @@ edition = "2021"
 clap = { version = "3.0", features = ["derive"] }
 csv = "1.1"
 base64 = "0.13.0"
-serde_json = "1.0.85"
+serde-json-wasm = "0.4.1"
 merkle = { path= "../merkle" }

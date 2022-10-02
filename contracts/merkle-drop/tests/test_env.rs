@@ -7,7 +7,7 @@ use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgCrea
 use osmosis_testing::{Account, ExecuteResponse, OsmosisTestApp, Runner, SigningAccount};
 use osmosis_testing::{Gamm, Module, Wasm};
 
-const TEST_ROOT: &str = "Nz54SQtyBVHwsmEqNI//mxFgiq8MRD7sS92IGkhgMvo=";
+const TEST_ROOT: &str = "1V0YcwzXWtB+iuOTob6juiNliUmB278xZIKMnzwjqOU=";
 
 pub const VALID_SUBDENOM: &str = "subdenom";
 

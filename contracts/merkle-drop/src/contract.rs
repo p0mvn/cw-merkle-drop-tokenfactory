@@ -2,7 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
-    SubMsg,
+    SubMsg, Uint128,
 };
 use cw2::set_contract_version;
 use osmosis_std::types::cosmos::base::v1beta1;
@@ -96,7 +96,7 @@ pub fn claim(
     env: Env,
     info: MessageInfo,
     proof_str: String,
-    amount: Coin,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage).unwrap();
 
@@ -119,11 +119,13 @@ pub fn claim(
 
     verify_proof(&config.merkle_root, &proof_str, &claim)?;
 
+    let subdenom = SUBDENOM.load(deps.storage)?;
+
     let mint_msg = MsgMint {
         sender: env.contract.address.to_string(),
         amount: Some(v1beta1::Coin {
-            denom: amount.denom,
-            amount: amount.amount.to_string(),
+            denom: format!("tokenfactory/{}/{}", config.owner, subdenom),
+            amount: amount.to_string(),
         }),
     };
 
