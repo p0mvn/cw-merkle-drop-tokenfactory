@@ -2,7 +2,21 @@
 
 ## Introduction
 
-TODO
+The conventional way we approach airdrops today is sub-optimal. This normally involves iterating over large data sets, is a convoluted process to actually get the token to the end user's wallet, can take multiple days to complete, and can congest the blockchain.
+
+The way this Merkle drop contract solves this problem is in the following way:
+
+1. With the provided script, the process of pulling a list of accounts from live Osmosis state is now completely automated. In this implementation, we airdrop to accounts that have a user defined minimum number of osmo staked.
+
+  * This export normally takes over two hours, however we got this process down to 30 seconds by only exporting the data required to generate the Merkle tree.
+
+2. Utilizing this data, our script takes the amount of tokens the user wants to airdrop and proportionally (with respect to osmo staked) distributes this to each wallet and exports this as a csv.
+
+3. This csv is then used to generate a Merkle tree. From this tree, the Merkle root is extracted. This is the only data that will need to get stored on chain!
+
+4. Now, given a user address, the frontend will determine how much this address is allocated for the airdrop. This allocation number as well as address is used to confirm the Merkle proof via the smart contract. 
+
+5. Utilizing tokenfactory, our contract mints the coresponding airdrop amount and sends it to the requesting user.
 
 ## Prerequisites
 
