@@ -7,13 +7,10 @@ pub fn handle_mint_reply(deps: DepsMut, msg: Reply) -> Result<Response, Contract
     deps.api.debug(&"mint reply reached");
 
     match msg.result {
-        SubMsgResult::Ok(SubMsgResponse {
-            events,
-            ..
-        }) => {
+        SubMsgResult::Ok(SubMsgResponse { events, .. }) => {
             deps.api.debug(&"mint reply parsing response");
 
-            deps.api.debug(&format!("{}" ,events.len()));
+            deps.api.debug(&format!("{}", events.len()));
 
             for event in events {
                 deps.api.debug(&format!("event = {event:?}"));
