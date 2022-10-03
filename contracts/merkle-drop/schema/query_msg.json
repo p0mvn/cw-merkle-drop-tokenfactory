@@ -5,11 +5,25 @@
     {
       "type": "object",
       "required": [
-        "get_count"
+        "get_root"
       ],
       "properties": {
-        "get_count": {
-          "type": "object"
+        "get_root": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_subdenom"
+      ],
+      "properties": {
+        "get_subdenom": {
+          "type": "object",
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

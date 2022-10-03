@@ -1,14 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "GetCountResponse",
+  "title": "GetRootResponse",
   "type": "object",
   "required": [
-    "count"
+    "root"
   ],
   "properties": {
-    "count": {
-      "type": "integer",
-      "format": "int32"
+    "root": {
+      "type": "string"
     }
-  }
+  },
+  "additionalProperties": false
 }

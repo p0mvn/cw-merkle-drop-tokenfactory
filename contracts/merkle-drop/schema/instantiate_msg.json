@@ -3,12 +3,12 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "count"
+    "merkle_root"
   ],
   "properties": {
-    "count": {
-      "type": "integer",
-      "format": "int32"
+    "merkle_root": {
+      "type": "string"
     }
-  }
+  },
+  "additionalProperties": false
 }

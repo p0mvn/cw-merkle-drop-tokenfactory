@@ -6,19 +6,32 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use osmosis_std::types::cosmos::base::v1beta1;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, TokenfactoryQuerier};
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{
+    MsgChangeAdmin, MsgMint, TokenfactoryQuerier,
+};
 
 use crate::error::ContractError;
 use crate::execute::verify_proof;
 use crate::msg::{ExecuteMsg, GetRootResponse, GetSubDenomResponse, InstantiateMsg, QueryMsg};
 use crate::reply::handle_mint_reply;
-use crate::state::{Config, CLAIM, CONFIG, SUBDENOM};
+use crate::state::{Config, MintReplyState, CLAIMED_ADDRESSES, CONFIG, MINT_REPLY_STATE, SUBDENOM};
+
+// type Grant struct {
+// 	Authorization *types.Any `protobuf:"bytes,1,opt,name=authorization,proto3" json:"authorization,omitempty"`
+// 	Expiration    time.Time  `protobuf:"bytes,2,opt,name=expiration,proto3,stdtime" json:"expiration"`
+// }
+
+// pub struct GrantMsg {
+//     Granter string `protobuf:"bytes,1,opt,name=granter,proto3" json:"granter,omitempty"`
+// 	Grantee string `protobuf:"bytes,2,opt,name=grantee,proto3" json:"grantee,omitempty"`
+// 	Grant   Grant  `protobuf:"bytes,3,opt,name=grant,proto3" json:"grant"`
+// }
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const MINT_MSG_ID: u64 = 1;
+pub const MINT_MSG_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -47,13 +60,18 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::SetSubDenom { subdenom } => set_subdenom(deps, info, subdenom),
-        ExecuteMsg::Claim { proof, amount } => claim(deps, env, info, proof, amount),
+        ExecuteMsg::SetSubDenom { subdenom } => set_subdenom(deps, env, info, subdenom),
+        ExecuteMsg::Claim {
+            proof,
+            amount,
+            claimer_addr,
+        } => claim(deps, env, info, proof, amount, claimer_addr),
     }
 }
 
 pub fn set_subdenom(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     subdenom: String,
 ) -> Result<Response, ContractError> {
@@ -61,13 +79,18 @@ pub fn set_subdenom(
 
     // validate sender
     if config.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::UnauthorizedSender {
+            sender: info.sender.into_string(),
+            owner: config.owner.into_string(),
+        });
     }
 
-    // validate subdenom and that sender is admin
+    // validate that subdenom exists and that contract is admin
     let tf_querier = TokenfactoryQuerier::new(&deps.querier);
-    let response = tf_querier
-        .denom_authority_metadata(format!("tokenfactory/{}/{}", info.sender, subdenom))?;
+    let full_denom = format!("factory/{}/{}", config.owner, subdenom);
+    deps.api
+        .debug(&format!("set_subdenom full_denom: {}", full_denom));
+    let response = tf_querier.denom_authority_metadata(full_denom)?;
 
     if response.authority_metadata.is_none() {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -75,9 +98,9 @@ pub fn set_subdenom(
         }));
     }
 
-    let auth_metadata = response.authority_metadata.unwrap();
-
-    if auth_metadata.admin.eq(&info.sender) {
+    let admin = response.authority_metadata.unwrap().admin;
+    deps.api.debug(&format!("denom admin = {admin:?}"));
+    if !admin.eq(&env.contract.address) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -97,13 +120,15 @@ pub fn claim(
     info: MessageInfo,
     proof_str: String,
     amount: Uint128,
+    claimer_addr: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage).unwrap();
 
-    let sender = info.sender.as_str();
-    let claim = format!("{}{}", sender, amount.to_string());
+    // TODO: validate claimer_addr is an actual account
 
-    let claim_check = CLAIM.may_load(deps.storage, &claim)?;
+    let claim = format!("{}{}", claimer_addr, amount.to_string());
+
+    let claim_check = CLAIMED_ADDRESSES.may_load(deps.storage, &claim)?;
     if claim_check.is_some() {
         return Err(ContractError::AlreadyClaimed {
             claim: claim.clone(),
@@ -119,27 +144,52 @@ pub fn claim(
 
     verify_proof(&config.merkle_root, &proof_str, &claim)?;
 
+    deps.api.debug(&"validation passed");
+
     let subdenom = SUBDENOM.load(deps.storage)?;
+
+    let full_denom = format!("factory/{}/{}", config.owner, subdenom);
+    deps.api
+        .debug(&format!("claim full_denom: claim end: {}", full_denom));
+
+    let tf_querier = TokenfactoryQuerier::new(&deps.querier);
+    let admin = tf_querier
+        .denom_authority_metadata(full_denom.clone())?
+        .authority_metadata
+        .unwrap()
+        .admin;
+    deps.api.debug(&format!("denom admin = {admin:?}"));
 
     let mint_msg = MsgMint {
         sender: env.contract.address.to_string(),
         amount: Some(v1beta1::Coin {
-            denom: format!("tokenfactory/{}/{}", config.owner, subdenom),
+            denom: full_denom.clone(),
             amount: amount.to_string(),
         }),
     };
 
-    CLAIM.save(deps.storage, &claim, &true)?;
+    MINT_REPLY_STATE.save(
+        deps.storage,
+        MINT_MSG_ID,
+        &MintReplyState {
+            claimer_addr: claimer_addr,
+            amount: amount,
+            denom: full_denom,
+        },
+    )?;
+
+    deps.api.debug(&"claim end");
 
     Ok(Response::new()
         .add_attribute("action", "claim")
-        .add_submessage(SubMsg::reply_always(mint_msg, MINT_MSG_ID)))
+        .add_submessage(SubMsg::reply_on_success(mint_msg, MINT_MSG_ID)))
 }
 
 /// Handling submessage reply.
 /// For more info on submessage and reply, see https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#submessages
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    deps.api.debug(&"reply reached");
     match msg.id {
         MINT_MSG_ID => handle_mint_reply(deps, msg),
         id => Err(ContractError::UnknownReplyId { reply_id: id }),

@@ -1,9 +1,12 @@
 use std::path::PathBuf;
 
 use cosmwasm_std::Coin;
-use merkle_drop::msg::InstantiateMsg;
+use merkle_drop::msg::{InstantiateMsg, QueryMsg};
 use osmosis_std::types::osmosis::tokenfactory;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgCreateDenomResponse};
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{
+    MsgChangeAdmin, MsgChangeAdminResponse, MsgCreateDenom, MsgCreateDenomResponse,
+    QueryDenomAuthorityMetadataRequest, QueryDenomAuthorityMetadataResponse,
+};
 use osmosis_testing::{Account, ExecuteResponse, OsmosisTestApp, Runner, SigningAccount};
 use osmosis_testing::{Gamm, Module, Wasm};
 
@@ -15,12 +18,10 @@ pub struct TestEnv {
     pub app: OsmosisTestApp,
     pub contract_address: String,
     pub owner: SigningAccount,
-    pub valid_sender: SigningAccount,
 }
 impl TestEnv {
     pub fn new() -> Self {
         let app = OsmosisTestApp::new();
-        let gamm = Gamm::new(&app);
         let wasm = Wasm::new(&app);
 
         // setup owner account
@@ -31,15 +32,13 @@ impl TestEnv {
         ];
         let owner = app.init_account(&initial_balance).unwrap();
 
-        let valid_sender = app.init_account(&initial_balance).unwrap();
-
+        // Create denom
         let create_denom_msg = tokenfactory::v1beta1::MsgCreateDenom {
-            sender: valid_sender.address(),
+            sender: owner.address(),
             subdenom: String::from(VALID_SUBDENOM),
         };
-
         let _res: ExecuteResponse<MsgCreateDenomResponse> = app
-            .execute(create_denom_msg, MsgCreateDenom::TYPE_URL, &valid_sender)
+            .execute(create_denom_msg, MsgCreateDenom::TYPE_URL, &owner)
             .unwrap();
 
         let code_id = wasm
@@ -63,11 +62,47 @@ impl TestEnv {
             .data
             .address;
 
+        let full_denom = format!("factory/{}/{}", owner.address(), VALID_SUBDENOM);
+
+        // Simulate authz Grant by changing admin to contract address
+        let change_admin_msg = tokenfactory::v1beta1::MsgChangeAdmin {
+            sender: owner.address(),
+            denom: full_denom.clone(),
+            new_admin: contract_address.clone(),
+        };
+
+        let _res: ExecuteResponse<MsgChangeAdminResponse> = app
+            .execute(change_admin_msg, MsgChangeAdmin::TYPE_URL, &owner)
+            .unwrap();
+
+        let admin_query = QueryDenomAuthorityMetadataRequest { denom: full_denom };
+
+        let admin = app
+            .query::<QueryDenomAuthorityMetadataRequest, QueryDenomAuthorityMetadataResponse>(
+                "/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata",
+                &admin_query,
+            )
+            .unwrap()
+            .authority_metadata
+            .unwrap()
+            .admin;
+
+        println!("setup admin {}", admin);
+        println!("contract address {}", contract_address);
+        if !admin.eq(&contract_address) {
+            panic!(
+                "{}",
+                format!(
+                    "admin from response {} is not equal to contract address {}",
+                    admin, contract_address
+                )
+            );
+        }
+
         TestEnv {
             app,
             contract_address,
             owner,
-            valid_sender,
         }
     }
 }
