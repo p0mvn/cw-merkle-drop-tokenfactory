@@ -14,7 +14,7 @@ use crate::error::ContractError;
 use crate::execute::verify_proof;
 use crate::msg::{ExecuteMsg, GetRootResponse, GetSubDenomResponse, InstantiateMsg, QueryMsg};
 use crate::reply::handle_mint_reply;
-use crate::state::{Config, CLAIM, CONFIG, SUBDENOM};
+use crate::state::{Config, MintReplyState, CLAIMED_ADDRESSES, CONFIG, MINT_REPLY_STATE, SUBDENOM};
 
 // type Grant struct {
 // 	Authorization *types.Any `protobuf:"bytes,1,opt,name=authorization,proto3" json:"authorization,omitempty"`
@@ -31,7 +31,7 @@ use crate::state::{Config, CLAIM, CONFIG, SUBDENOM};
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const MINT_MSG_ID: u64 = 1;
+pub const MINT_MSG_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -79,7 +79,10 @@ pub fn set_subdenom(
 
     // validate sender
     if config.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::UnauthorizedSender {
+            sender: info.sender.into_string(),
+            owner: config.owner.into_string(),
+        });
     }
 
     // validate that subdenom exists and that contract is admin
@@ -125,7 +128,7 @@ pub fn claim(
 
     let claim = format!("{}{}", claimer_addr, amount.to_string());
 
-    let claim_check = CLAIM.may_load(deps.storage, &claim)?;
+    let claim_check = CLAIMED_ADDRESSES.may_load(deps.storage, &claim)?;
     if claim_check.is_some() {
         return Err(ContractError::AlreadyClaimed {
             claim: claim.clone(),
@@ -160,12 +163,20 @@ pub fn claim(
     let mint_msg = MsgMint {
         sender: env.contract.address.to_string(),
         amount: Some(v1beta1::Coin {
-            denom: full_denom,
+            denom: full_denom.clone(),
             amount: amount.to_string(),
         }),
     };
 
-    CLAIM.save(deps.storage, &claim, &true)?;
+    MINT_REPLY_STATE.save(
+        deps.storage,
+        MINT_MSG_ID,
+        &MintReplyState {
+            claimer_addr: claimer_addr,
+            amount: amount,
+            denom: full_denom,
+        },
+    )?;
 
     deps.api.debug(&"claim end");
 

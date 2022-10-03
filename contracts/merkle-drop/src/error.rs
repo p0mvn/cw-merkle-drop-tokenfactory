@@ -9,6 +9,9 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("Unauthorized sender: {sender:?}, owner: {owner:?} ")]
+    UnauthorizedSender { sender: String, owner: String },
+
     #[error("Failed to decode root: {root:?}")]
     FailedToDecodeRoot { root: String },
 
