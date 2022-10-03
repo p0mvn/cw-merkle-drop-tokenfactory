@@ -6,19 +6,24 @@ use crate::ContractError;
 pub fn handle_mint_reply(deps: DepsMut, msg: Reply) -> Result<Response, ContractError> {
     deps.api.debug(&"mint reply reached");
 
-    if let SubMsgResult::Ok(SubMsgResponse {
-        data: Some(b),
-        events,
-    }) = msg.result
-    {
-        // make sure we parse the desired response correctly.
-        let _res: MsgMintResponse = b.try_into().map_err(ContractError::Std)?;
+    match msg.result {
+        SubMsgResult::Ok(SubMsgResponse {
+            events,
+            ..
+        }) => {
+            deps.api.debug(&"mint reply parsing response");
 
-        for event in events {
-            deps.api.debug(&event.ty);
+            deps.api.debug(&format!("{}" ,events.len()));
+
+            for event in events {
+                deps.api.debug(&format!("event = {event:?}"));
+            }
+
+            return Ok(Response::new().add_attribute("reply", "tf_mint"));
         }
-
-        return Ok(Response::default());
+        SubMsgResult::Err(e) => {
+            deps.api.debug(&e);
+        }
     }
 
     Err(ContractError::FailedToMint {})

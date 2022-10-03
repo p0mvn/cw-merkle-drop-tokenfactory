@@ -6,7 +6,9 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use osmosis_std::types::cosmos::base::v1beta1;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, MsgChangeAdmin, TokenfactoryQuerier};
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{
+    MsgChangeAdmin, MsgMint, TokenfactoryQuerier,
+};
 
 use crate::error::ContractError;
 use crate::execute::verify_proof;
@@ -59,7 +61,11 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::SetSubDenom { subdenom } => set_subdenom(deps, env, info, subdenom),
-        ExecuteMsg::Claim { proof, amount, claimer_addr } => claim(deps, env, info, proof, amount, claimer_addr),
+        ExecuteMsg::Claim {
+            proof,
+            amount,
+            claimer_addr,
+        } => claim(deps, env, info, proof, amount, claimer_addr),
     }
 }
 
@@ -78,10 +84,10 @@ pub fn set_subdenom(
 
     // validate that subdenom exists and that contract is admin
     let tf_querier = TokenfactoryQuerier::new(&deps.querier);
-    let full_denom = format!("factory/{}/{}", info.sender, subdenom);
-    deps.api.debug(&format!("set_subdenom full_denom: claim end: {}", full_denom));
-    let response = tf_querier
-        .denom_authority_metadata(full_denom)?;
+    let full_denom = format!("factory/{}/{}", config.owner, subdenom);
+    deps.api
+        .debug(&format!("set_subdenom full_denom: {}", full_denom));
+    let response = tf_querier.denom_authority_metadata(full_denom)?;
 
     if response.authority_metadata.is_none() {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -89,9 +95,9 @@ pub fn set_subdenom(
         }));
     }
 
-    let auth_metadata = response.authority_metadata.unwrap();
-
-    if auth_metadata.admin.eq(&env.contract.address) {
+    let admin = response.authority_metadata.unwrap().admin;
+    deps.api.debug(&format!("denom admin = {admin:?}"));
+    if !admin.eq(&env.contract.address) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -140,12 +146,16 @@ pub fn claim(
     let subdenom = SUBDENOM.load(deps.storage)?;
 
     let full_denom = format!("factory/{}/{}", config.owner, subdenom);
-    deps.api.debug(&format!("claim full_denom: claim end: {}", full_denom));
+    deps.api
+        .debug(&format!("claim full_denom: claim end: {}", full_denom));
 
     let tf_querier = TokenfactoryQuerier::new(&deps.querier);
     let admin = tf_querier
-        .denom_authority_metadata(full_denom.clone())?.authority_metadata.unwrap().admin;
-    deps.api.debug(&format!("claim admin = {admin:?}"));
+        .denom_authority_metadata(full_denom.clone())?
+        .authority_metadata
+        .unwrap()
+        .admin;
+    deps.api.debug(&format!("denom admin = {admin:?}"));
 
     let mint_msg = MsgMint {
         sender: env.contract.address.to_string(),

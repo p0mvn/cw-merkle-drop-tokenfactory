@@ -29,7 +29,6 @@ fn test_set_denom_success_case() {
         app,
         contract_address,
         owner,
-        valid_sender: _,
     } = TestEnv::new();
 
     let subdenom = String::from(VALID_SUBDENOM);
