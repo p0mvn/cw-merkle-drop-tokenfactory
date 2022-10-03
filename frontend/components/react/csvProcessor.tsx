@@ -1,8 +1,9 @@
-import { Box, Button, FormControl, FormHelperText, FormLabel, Input, Table, Tbody, Thead, Tr } from "@chakra-ui/react";
-import { SetStateAction, useState } from "react";
+import { Box, Button, FormControl, FormLabel, Input, Table, Tbody, Thead, Tr } from "@chakra-ui/react";
+import { useState } from "react";
+import init, { wasm_gets, wasm_sends} from "stack"
 
 
-export default function CsvProcessor() {
+export default function CsvProcessor(airdropSize: number) {
 	const [file, setFile] = useState();
 	const [array, setArray] = useState([]);
 
@@ -24,9 +25,16 @@ export default function CsvProcessor() {
 			}, {});
 			return obj;
 		});
-	
+		let pass = array.filter((el: any) => {
+			return el.staked !== undefined;
+		});
+		init().then(() => {
+			let example = wasm_gets();
+			wasm_sends(pass);
+		})
 		setArray(array);
 	};
+
 
     const handleOnSubmit = (e: { preventDefault: () => void; }) => {
         e.preventDefault();
@@ -60,7 +68,6 @@ export default function CsvProcessor() {
 					))}
 				</Tr>
 				</Thead>
-
 				<Tbody>
 				{array.map((item) => (
 					<Tr key={item}>

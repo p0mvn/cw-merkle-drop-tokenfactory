@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:wasm": "cd wasm-lib && wasm-pack build --target web --out-dir pkg",
     "start": "next start",
     "lint": "next lint",
     "codegen": "cross-env NODE_ENV=development babel-node scripts/codegen.js"
@@ -21,6 +22,7 @@
     "@cosmos-kit/react": "0.18.0",
     "@emotion/react": "11.10.4",
     "@emotion/styled": "11.10.4",
+    "airdrop-definition": "./wasm-lib/pkg",
     "bignumber.js": "9.1.0",
     "chain-registry": "1.0.0",
     "framer-motion": "7.3.6",
@@ -28,7 +30,8 @@
     "osmojs": "0.25.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-icons": "4.4.0"
+    "react-icons": "4.4.0",
+    "stack": "file:wasm-lib/pkg"
   },
   "devDependencies": {
     "@cosmwasm/ts-codegen": "0.16.5",
