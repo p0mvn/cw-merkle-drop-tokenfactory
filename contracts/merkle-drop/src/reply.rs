@@ -17,7 +17,7 @@ pub fn handle_mint_reply(deps: DepsMut, msg: Reply) -> Result<Response, Contract
             let mint_reply_state = MINT_REPLY_STATE.load(deps.storage, MINT_MSG_ID)?;
 
             CLAIMED_ADDRESSES.save(deps.storage, &mint_reply_state.claimer_addr, &true)?;
-            
+
             // Prune mint reply state
             MINT_REPLY_STATE.remove(deps.storage, MINT_MSG_ID);
 
