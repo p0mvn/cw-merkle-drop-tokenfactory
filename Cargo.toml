@@ -3,6 +3,7 @@
 members = [
   'contracts/*',
   'helpers/*',
+  'frontend/rust/*',
 ]
 
 [profile.release]

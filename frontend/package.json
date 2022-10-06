@@ -22,7 +22,7 @@
     "@cosmos-kit/react": "0.18.0",
     "@emotion/react": "11.10.4",
     "@emotion/styled": "11.10.4",
-    "airdrop-definition": "./wasm-lib/pkg",
+    "airdrop-definition": "./rust/merkle-binding/pkg",
     "bignumber.js": "9.1.0",
     "chain-registry": "1.0.0",
     "framer-motion": "7.3.6",
@@ -31,7 +31,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-icons": "4.4.0",
-    "stack": "file:wasm-lib/pkg"
+    "stack": "file:rust/merkle-binding/pkg"
   },
   "devDependencies": {
     "@cosmwasm/ts-codegen": "0.16.5",
