@@ -5,6 +5,7 @@ import { AssetList, Asset } from '@chain-registry/types';
 
 // import cosmwasm client generated with cosmwasm-ts-codegen
 import { HackCw20QueryClient } from '../codegen/HackCw20.client';
+import React, { ReactNode } from 'react';
 
 import {
   Box,
@@ -29,8 +30,11 @@ import { Product, Dependency, WalletSection } from '../components';
 import Head from 'next/head';
 import Navbar from '../components/navbar';
 import Layout from '../components/navbar';
-import CsvProcessor from '../components/react/csvProcessor';
+import dynamic from 'next/dynamic'
 
+const DynamicCsvProcessor = dynamic(() => import('../components/react/csvProcessor'), {
+    ssr: false,
+})
 
 export default function Home() {
 
@@ -45,7 +49,7 @@ export default function Home() {
         <Flex justifyContent="end" mb={4}>
         </Flex>
         <Box textAlign="center">
-          <CsvProcessor></CsvProcessor>
+          <DynamicCsvProcessor></DynamicCsvProcessor>
         </Box>
       </Container>
     </Layout>

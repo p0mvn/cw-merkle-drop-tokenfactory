@@ -2,8 +2,7 @@ import { Box, Button, FormControl, FormLabel, Input, Table, Tbody, Thead, Tr } f
 import { useState } from "react";
 import init, { wasm_gets, wasm_sends} from "stack"
 
-
-export default function CsvProcessor(airdropSize: number) {
+export default function CsvProcessor() {
 	const [file, setFile] = useState();
 	const [array, setArray] = useState([]);
 
@@ -29,8 +28,8 @@ export default function CsvProcessor(airdropSize: number) {
 			return el.staked !== undefined;
 		});
 		init().then(() => {
-			let example = wasm_gets();
-			wasm_sends(pass);
+			let example = wasm_gets(pass);
+			// wasm_sends(pass);
 		})
 		setArray(array);
 	};
@@ -63,16 +62,16 @@ export default function CsvProcessor(airdropSize: number) {
 			<Table mt="6">
 				<Thead>
 				<Tr key={"header"}>
-					{headerKeys.map((key) => (
-					<th>{key}</th>
+					{headerKeys.map((key, idx) => (
+					<th key={idx}>{key}</th>
 					))}
 				</Tr>
 				</Thead>
 				<Tbody>
 				{array.map((item) => (
 					<Tr key={item}>
-					{Object.values(item).map((val: any) => (
-						<td>{val}</td>
+					{Object.values(item).map((val: any, idx) => (
+						<td key={idx}>{val}</td>
 					))}
 					</Tr>
 				))}
