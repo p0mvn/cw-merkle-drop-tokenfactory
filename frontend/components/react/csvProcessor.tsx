@@ -1,12 +1,42 @@
 import { Box, Button, FormControl, FormLabel, Input, Table, Tbody, Thead, Tr } from "@chakra-ui/react";
 import { useState } from "react";
+import { useWallet } from '@cosmos-kit/react';
 import init, { wasm_gets, wasm_sends} from "stack"
+import { cosmos } from "osmojs";
 
 export default function CsvProcessor() {
 	const [file, setFile] = useState();
 	const [array, setArray] = useState([]);
 
     const fileReader = new FileReader();
+
+    const {
+        getStargateClient,
+        getCosmWasmClient,
+        address,
+        setCurrentChain,
+        currentWallet,
+        walletStatus
+      } = useWallet();
+
+      const sendTokens = async () => {
+        const stargateClient = await getStargateClient();
+        if (!stargateClient || !address) {
+            console.error('stargateClient undefined or address undefined.')
+            return;
+        }
+  
+        const { send } = cosmos.bank.v1beta1.MessageComposer.withTypeUrl;
+  
+        const msg = send({
+          amount: [ { denom: 'uatom', amount: '1000' } ],
+          toAddress: address, fromAddress: address
+        });
+  
+        const fee: StdFee = { amount: [ { denom: 'uatom', amount: '864' } ], gas: '86364' };
+  
+        await stargateClient.signAndBroadcast(address, [msg], fee, memo);
+      }
 
     const handleOnChange = (e: any) => {
         setFile(e.target.files[0]);
@@ -52,6 +82,9 @@ export default function CsvProcessor() {
 
 	return (
 		<Box alignContent='center'>
+            <FormControl>
+                <Button mx="4" mt="4">Upload Root</Button>
+            </FormControl>
 			<FormControl>
 				<Button mx="4" mt="4">
 					<FormLabel htmlFor='file-upload' alignContent='center' m="2">Pick a File</FormLabel>

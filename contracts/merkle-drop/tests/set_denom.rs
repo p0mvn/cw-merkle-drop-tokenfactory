@@ -11,6 +11,8 @@ test_set_denom!(
 // TODO: add edge case tests:
 // - non-owner
 // - contract owner but there is no denom created
+// - authz grant issued - success
+// - authz grant is not issues - failure
 
 // ======= helpers ========
 

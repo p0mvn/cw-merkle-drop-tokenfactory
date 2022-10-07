@@ -2,30 +2,21 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
-    SubMsg, Uint128,
+    SubMsg, Uint128, CosmosMsg,
 };
 use cw2::set_contract_version;
 use osmosis_std::types::cosmos::base::v1beta1;
 use osmosis_std::types::osmosis::tokenfactory::v1beta1::{
     MsgChangeAdmin, MsgMint, TokenfactoryQuerier,
 };
+use osmosis_std::types::cosmos::authz::v1beta1::{MsgExec, MsgGrant, AuthzQuerier};
+// use osmosis_std_derive::proto_message;
 
 use crate::error::ContractError;
 use crate::execute::verify_proof;
 use crate::msg::{ExecuteMsg, GetRootResponse, GetSubDenomResponse, InstantiateMsg, QueryMsg};
 use crate::reply::handle_mint_reply;
 use crate::state::{Config, MintReplyState, CLAIMED_ADDRESSES, CONFIG, MINT_REPLY_STATE, SUBDENOM};
-
-// type Grant struct {
-// 	Authorization *types.Any `protobuf:"bytes,1,opt,name=authorization,proto3" json:"authorization,omitempty"`
-// 	Expiration    time.Time  `protobuf:"bytes,2,opt,name=expiration,proto3,stdtime" json:"expiration"`
-// }
-
-// pub struct GrantMsg {
-//     Granter string `protobuf:"bytes,1,opt,name=granter,proto3" json:"granter,omitempty"`
-// 	Grantee string `protobuf:"bytes,2,opt,name=grantee,proto3" json:"grantee,omitempty"`
-// 	Grant   Grant  `protobuf:"bytes,3,opt,name=grant,proto3" json:"grant"`
-// }
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
@@ -104,6 +95,16 @@ pub fn set_subdenom(
         return Err(ContractError::Unauthorized {});
     }
 
+    // ensure that authz grant is created
+    let authz_querier = AuthzQuerier::new(&deps.querier);
+
+    let grants_response = authz_querier.grants(String::from(config.owner), String::from(env.contract.address), String::from("/osmosis.tokenfactory.v1beta1.MsgMint"), Option::None)?;
+
+    if grants_response.grants.len() == 0 {
+        // TODO: format addresses
+        return Err(ContractError::NoAuthZMintGrant {  })
+    }
+
     SUBDENOM.save(deps.storage, &subdenom)?;
 
     deps.api.debug(&format!("saved subdenom {0}", &subdenom));
@@ -167,6 +168,13 @@ pub fn claim(
             amount: amount.to_string(),
         }),
     };
+
+    let exec_msg = MsgExec{
+        grantee: String::from(""),
+        msgs: vec![]
+    };
+
+
 
     MINT_REPLY_STATE.save(
         deps.storage,

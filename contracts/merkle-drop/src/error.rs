@@ -26,4 +26,7 @@ pub enum ContractError {
 
     #[error("Failed to mint")]
     FailedToMint {},
+
+    #[error("AuthZ grant for tokenfactory mint is not issued for the contract address")]
+    NoAuthZMintGrant {},
 }
