@@ -51,11 +51,15 @@ macro_rules! test_claim {
 }
 
 fn test_claim_success_case(proof: String, amount: Uint128) {
+    let test_env = TestEnv::new();
+
+    test_env.execute_msg_grant();
+
     let TestEnv {
         app,
         contract_address,
         owner,
-    } = TestEnv::new();
+    } = test_env;
 
     let set_subdenom_msg = ExecuteMsg::SetSubDenom {
         subdenom: String::from(VALID_SUBDENOM),

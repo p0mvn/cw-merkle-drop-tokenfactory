@@ -7,18 +7,31 @@ use osmosis_std::types::osmosis::tokenfactory::v1beta1::{
     MsgChangeAdmin, MsgChangeAdminResponse, MsgCreateDenom, MsgCreateDenomResponse,
     QueryDenomAuthorityMetadataRequest, QueryDenomAuthorityMetadataResponse,
 };
+use osmosis_testing::{cosmrs::tx::MessageExt, Gamm, Module, Wasm};
 use osmosis_testing::{Account, ExecuteResponse, OsmosisTestApp, Runner, SigningAccount};
-use osmosis_testing::{Gamm, Module, Wasm};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use osmosis_std::{
+    shim::{Any, Timestamp},
+    types::{
+        cosmos::authz::v1beta1::{GenericAuthorization, Grant, MsgGrant},
+        osmosis::tokenfactory::v1beta1::MsgMint,
+    },
+};
 
 const TEST_ROOT: &str = "1V0YcwzXWtB+iuOTob6juiNliUmB278xZIKMnzwjqOU=";
 
 pub const VALID_SUBDENOM: &str = "subdenom";
+
+const AIRDROP_SECONDS_DURATION: i64 = 60 * 60 * 5; // 5 hours from now
+const AIRDROP_NANOS_DURATION: i32 = 0;
 
 pub struct TestEnv {
     pub app: OsmosisTestApp,
     pub contract_address: String,
     pub owner: SigningAccount,
 }
+
 impl TestEnv {
     pub fn new() -> Self {
         let app = OsmosisTestApp::new();
@@ -104,6 +117,44 @@ impl TestEnv {
             contract_address,
             owner,
         }
+    }
+}
+
+pub trait Granter {
+    fn execute_msg_grant(&self);
+}
+
+impl Granter for TestEnv {
+    fn execute_msg_grant(&self) {
+        let generic_mint_authorization = GenericAuthorization {
+            msg: String::from(MsgMint::TYPE_URL),
+        };
+
+        let duration_since_unix_secs = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        // issue authz message
+        let authz_grant_msg = MsgGrant {
+            grantee: self.contract_address.clone(),
+            granter: self.owner.address().clone(),
+            grant: Some(Grant {
+                authorization: Some(Any {
+                    type_url: String::from(GenericAuthorization::TYPE_URL),
+                    value: generic_mint_authorization.to_bytes().unwrap(),
+                }),
+                expiration: Some(Timestamp {
+                    seconds: duration_since_unix_secs + AIRDROP_SECONDS_DURATION,
+                    nanos: AIRDROP_NANOS_DURATION,
+                }),
+            }),
+        };
+
+        let _res: ExecuteResponse<MsgGrant> = self
+            .app
+            .execute(authz_grant_msg, MsgGrant::TYPE_URL, &self.owner)
+            .unwrap();
     }
 }
 
