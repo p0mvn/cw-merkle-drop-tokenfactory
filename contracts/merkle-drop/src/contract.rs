@@ -1,28 +1,19 @@
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
-    StdResult, SubMsg, Uint128,
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 use cw2::set_contract_version;
-use osmosis_std::types::cosmos::authz::v1beta1::{AuthzQuerier, MsgExec, MsgGrant};
-use osmosis_std::types::cosmos::base::v1beta1;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{
-    MsgChangeAdmin, MsgMint, TokenfactoryQuerier,
-};
-// use osmosis_std_derive::proto_message;
 
 use crate::error::ContractError;
-use crate::execute::verify_proof;
+use crate::execute::claim::claim;
+use crate::execute::set_subdenom::set_subdenom;
 use crate::msg::{ExecuteMsg, GetRootResponse, GetSubDenomResponse, InstantiateMsg, QueryMsg};
-use crate::reply::handle_mint_reply;
-use crate::state::{Config, MintReplyState, CLAIMED_ADDRESSES, CONFIG, MINT_REPLY_STATE, SUBDENOM};
+use crate::reply::{handle_mint_reply, AUTHZ_EXEC_SEND_MSG_ID, handle_send_reply, AUTHZ_EXEC_MINT_MSG_ID};
+use crate::state::{Config, CONFIG, SUBDENOM};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:merkle-drop";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-pub const MINT_MSG_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -56,155 +47,21 @@ pub fn execute(
             proof,
             amount,
             claimer_addr,
-        } => claim(deps, env, info, proof, amount, claimer_addr),
+        } => claim(deps, env,  proof, amount, claimer_addr),
     }
-}
-
-pub fn set_subdenom(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    subdenom: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    // validate sender
-    if config.owner != info.sender {
-        return Err(ContractError::UnauthorizedSender {
-            sender: info.sender.into_string(),
-            owner: config.owner.into_string(),
-        });
-    }
-
-    // validate that subdenom exists and that contract is admin
-    let tf_querier = TokenfactoryQuerier::new(&deps.querier);
-    let full_denom = format!("factory/{}/{}", config.owner, subdenom);
-    deps.api
-        .debug(&format!("set_subdenom full_denom: {}", full_denom));
-    let response = tf_querier.denom_authority_metadata(full_denom)?;
-
-    if response.authority_metadata.is_none() {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: String::from("invalid authority metadata"),
-        }));
-    }
-
-    let admin = response.authority_metadata.unwrap().admin;
-    deps.api.debug(&format!("denom admin = {admin:?}"));
-    if !admin.eq(&env.contract.address) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // ensure that authz grant is created
-    let authz_querier = AuthzQuerier::new(&deps.querier);
-
-    let grants_response = authz_querier.grants(
-        String::from(config.owner),
-        String::from(env.contract.address),
-        String::from("/osmosis.tokenfactory.v1beta1.MsgMint"),
-        Option::None,
-    )?;
-
-    if grants_response.grants.len() == 0 {
-        // TODO: format addresses
-        return Err(ContractError::NoAuthZMintGrant {});
-    }
-
-    SUBDENOM.save(deps.storage, &subdenom)?;
-
-    deps.api.debug(&format!("saved subdenom {0}", &subdenom));
-
-    Ok(Response::new()
-        .add_attribute("method", "set_subdenom")
-        .add_attribute("owner", info.sender)
-        .add_attribute("subdenom", subdenom))
-}
-
-pub fn claim(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    proof_str: String,
-    amount: Uint128,
-    claimer_addr: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage).unwrap();
-
-    // TODO: validate claimer_addr is an actual account
-
-    let claim = format!("{}{}", claimer_addr, amount.to_string());
-
-    let claim_check = CLAIMED_ADDRESSES.may_load(deps.storage, &claim)?;
-    if claim_check.is_some() {
-        return Err(ContractError::AlreadyClaimed {
-            claim: claim.clone(),
-        });
-    }
-
-    deps.api
-        .debug(&format!("merkle_root {0}", &config.merkle_root));
-
-    deps.api.debug(&format!("proof_str {0}", &proof_str));
-
-    deps.api.debug(&format!("claim {0}", &claim));
-
-    verify_proof(&config.merkle_root, &proof_str, &claim)?;
-
-    deps.api.debug(&"validation passed");
-
-    let subdenom = SUBDENOM.load(deps.storage)?;
-
-    let full_denom = format!("factory/{}/{}", config.owner, subdenom);
-    deps.api
-        .debug(&format!("claim full_denom: claim end: {}", full_denom));
-
-    let tf_querier = TokenfactoryQuerier::new(&deps.querier);
-    let admin = tf_querier
-        .denom_authority_metadata(full_denom.clone())?
-        .authority_metadata
-        .unwrap()
-        .admin;
-    deps.api.debug(&format!("denom admin = {admin:?}"));
-
-    let mint_msg = MsgMint {
-        sender: env.contract.address.to_string(),
-        amount: Some(v1beta1::Coin {
-            denom: full_denom.clone(),
-            amount: amount.to_string(),
-        }),
-    };
-
-    let exec_msg = MsgExec {
-        grantee: String::from(""),
-        msgs: vec![],
-    };
-
-    MINT_REPLY_STATE.save(
-        deps.storage,
-        MINT_MSG_ID,
-        &MintReplyState {
-            claimer_addr: claimer_addr,
-            amount: amount,
-            denom: full_denom,
-        },
-    )?;
-
-    deps.api.debug(&"claim end");
-
-    Ok(Response::new()
-        .add_attribute("action", "claim")
-        .add_submessage(SubMsg::reply_on_success(mint_msg, MINT_MSG_ID)))
 }
 
 /// Handling submessage reply.
 /// For more info on submessage and reply, see https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#submessages
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     deps.api.debug(&"reply reached");
-    match msg.id {
-        MINT_MSG_ID => handle_mint_reply(deps, msg),
-        id => Err(ContractError::UnknownReplyId { reply_id: id }),
+    if msg.id == AUTHZ_EXEC_MINT_MSG_ID {
+        return handle_mint_reply(deps, msg, env.contract.address.to_string())
+    } else if msg.id == AUTHZ_EXEC_SEND_MSG_ID {
+        return handle_send_reply(deps, msg)
     }
+    Err(ContractError::UnknownReplyId { reply_id: msg.id })
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

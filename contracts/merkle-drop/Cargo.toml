@@ -48,7 +48,8 @@ cw2 = "0.13.2"
 schemars = "0.8.8"
 serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
-osmosis-std = {git = "https://github.com/p0mvn/osmosis-rust", branch = "roman/authz-protos"}
+osmosis-std = {git = "https://github.com/p0mvn/osmosis-rust", branch = "roman/authz-protos3"}
+osmosis-std-derive = {git = "https://github.com/p0mvn/osmosis-rust", branch = "roman/authz-protos3"}
 merkle = { path = "../../helpers/merkle" }
 serde-json-wasm = "0.4.1"
 base64 = "0.13.0"
@@ -56,4 +57,4 @@ base64 = "0.13.0"
 
 [dev-dependencies]
 cw-multi-test = "0.13.2"
-osmosis-testing = {git = "https://github.com/p0mvn/osmosis-rust", branch = "roman/authz-protos"}
+osmosis-testing = {git = "https://github.com/p0mvn/osmosis-rust", branch = "roman/authz-protos3"}

@@ -1,13 +1,10 @@
 use std::path::PathBuf;
 
 use cosmwasm_std::Coin;
-use merkle_drop::msg::{InstantiateMsg, QueryMsg};
+use merkle_drop::msg::InstantiateMsg;
 use osmosis_std::types::osmosis::tokenfactory;
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::{
-    MsgChangeAdmin, MsgChangeAdminResponse, MsgCreateDenom, MsgCreateDenomResponse,
-    QueryDenomAuthorityMetadataRequest, QueryDenomAuthorityMetadataResponse,
-};
-use osmosis_testing::{cosmrs::tx::MessageExt, Gamm, Module, Wasm};
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgCreateDenomResponse};
+use osmosis_testing::{cosmrs::tx::MessageExt, Module, Wasm};
 use osmosis_testing::{Account, ExecuteResponse, OsmosisTestApp, Runner, SigningAccount};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -22,6 +19,7 @@ use osmosis_std::{
 const TEST_ROOT: &str = "1V0YcwzXWtB+iuOTob6juiNliUmB278xZIKMnzwjqOU=";
 
 pub const VALID_SUBDENOM: &str = "subdenom";
+const BANK_SEND_TYPE_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
 
 const AIRDROP_SECONDS_DURATION: i64 = 60 * 60 * 5; // 5 hours from now
 const AIRDROP_NANOS_DURATION: i32 = 0;
@@ -30,6 +28,7 @@ pub struct TestEnv {
     pub app: OsmosisTestApp,
     pub contract_address: String,
     pub owner: SigningAccount,
+    pub full_denom: String,
 }
 
 impl TestEnv {
@@ -77,55 +76,25 @@ impl TestEnv {
 
         let full_denom = format!("factory/{}/{}", owner.address(), VALID_SUBDENOM);
 
-        // Simulate authz Grant by changing admin to contract address
-        let change_admin_msg = tokenfactory::v1beta1::MsgChangeAdmin {
-            sender: owner.address(),
-            denom: full_denom.clone(),
-            new_admin: contract_address.clone(),
-        };
-
-        let _res: ExecuteResponse<MsgChangeAdminResponse> = app
-            .execute(change_admin_msg, MsgChangeAdmin::TYPE_URL, &owner)
-            .unwrap();
-
-        let admin_query = QueryDenomAuthorityMetadataRequest { denom: full_denom };
-
-        let admin = app
-            .query::<QueryDenomAuthorityMetadataRequest, QueryDenomAuthorityMetadataResponse>(
-                "/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata",
-                &admin_query,
-            )
-            .unwrap()
-            .authority_metadata
-            .unwrap()
-            .admin;
-
-        println!("setup admin {}", admin);
-        println!("contract address {}", contract_address);
-        if !admin.eq(&contract_address) {
-            panic!(
-                "{}",
-                format!(
-                    "admin from response {} is not equal to contract address {}",
-                    admin, contract_address
-                )
-            );
-        }
-
         TestEnv {
             app,
             contract_address,
             owner,
+            full_denom,
         }
     }
 }
 
 pub trait Granter {
-    fn execute_msg_grant(&self);
+    fn execute_msg_grant_mint(&self);
+
+    fn execute_msg_grant_bank_send(&self);
+
+    fn execute_msg_grant(&self, authorization: Any, duration_since_unix_secs: i64);
 }
 
 impl Granter for TestEnv {
-    fn execute_msg_grant(&self) {
+    fn execute_msg_grant_mint(&self) {
         let generic_mint_authorization = GenericAuthorization {
             msg: String::from(MsgMint::TYPE_URL),
         };
@@ -135,15 +104,45 @@ impl Granter for TestEnv {
             .unwrap()
             .as_secs() as i64;
 
+        self.execute_msg_grant(
+            Any {
+                type_url: String::from(GenericAuthorization::TYPE_URL),
+                value: generic_mint_authorization.to_bytes().unwrap(),
+            },
+            duration_since_unix_secs,
+        )
+    }
+
+    fn execute_msg_grant_bank_send(&self) {
+        // TODO: figure out serialization errors with the send authorization
+        // let spend_authorization = SendAuthorization {
+        //     spend_limit: vec![cosmos::base::v1beta1::Coin{ denom: self.full_denom.clone(), amount: String::from(MAX_SPEND_AUTHORIZATION_AMOUNT) }],
+        // };
+        let generic_send_authorization = GenericAuthorization {
+            msg: String::from(BANK_SEND_TYPE_URL),
+        };
+
+        let duration_since_unix_secs = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        self.execute_msg_grant(
+            Any {
+                type_url: String::from(GenericAuthorization::TYPE_URL),
+                value: generic_send_authorization.to_bytes().unwrap(),
+            },
+            duration_since_unix_secs,
+        )
+    }
+
+    fn execute_msg_grant(&self, authorization: Any, duration_since_unix_secs: i64) {
         // issue authz message
         let authz_grant_msg = MsgGrant {
             grantee: self.contract_address.clone(),
             granter: self.owner.address().clone(),
             grant: Some(Grant {
-                authorization: Some(Any {
-                    type_url: String::from(GenericAuthorization::TYPE_URL),
-                    value: generic_mint_authorization.to_bytes().unwrap(),
-                }),
+                authorization: Some(authorization),
                 expiration: Some(Timestamp {
                     seconds: duration_since_unix_secs + AIRDROP_SECONDS_DURATION,
                     nanos: AIRDROP_NANOS_DURATION,

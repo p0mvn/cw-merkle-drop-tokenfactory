@@ -1,15 +1,7 @@
 mod test_env;
 use merkle_drop::msg::{ExecuteMsg, GetSubDenomResponse, QueryMsg};
-use osmosis_std::shim::{Any, Timestamp};
-use osmosis_std::types::cosmos::authz::v1beta1::{GenericAuthorization, Grant, MsgGrant};
-use osmosis_std::types::osmosis::tokenfactory::v1beta1::MsgMint;
-use osmosis_testing::cosmrs::tx::MessageExt;
-use osmosis_testing::{Account, ExecuteResponse, Module, Runner, Wasm};
-use std::time::{SystemTime, UNIX_EPOCH};
+use osmosis_testing::{Module, Wasm};
 use test_env::*;
-
-const AIRDROP_SECONDS_DURATION: i64 = 60 * 60 * 5; // 5 hours from now
-const AIRDROP_NANOS_DURATION: i32 = 0;
 
 test_set_denom!(
     set_denom_valid_owner
@@ -19,7 +11,8 @@ test_set_denom!(
 // TODO: add edge case tests:
 // - non-owner
 // - contract owner but there is no denom created
-// - authz grant is not issued - failure
+// - authz grant for mint is not issued - failure
+// - authz grant for bank send is not issued - failure
 
 // ======= helpers ========
 
@@ -36,12 +29,14 @@ macro_rules! test_set_denom {
 fn test_set_denom_success_case() {
     let test_env = TestEnv::new();
 
-    test_env.execute_msg_grant();
+    test_env.execute_msg_grant_mint();
+    test_env.execute_msg_grant_bank_send();
 
     let TestEnv {
         app,
         contract_address,
         owner,
+        full_denom: _,
     } = test_env;
 
     let subdenom = String::from(VALID_SUBDENOM);

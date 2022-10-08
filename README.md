@@ -105,8 +105,24 @@ Note:
 
 ### AuthZ Grant
 
+#### TokenFactory Mint
+
 ```bash
 osmosisd tx authz grant osmo18s5lynnmx37hq4wlrw9gdn68sg2uxp5rgk26vv generic --msg-type /osmosis.tokenfactory.v1beta1.MsgMint --from lo-test1 --keyring-backend test -b=block
+```
+
+#### Bank Send
+
+##### As Send Authorization (maybe in the future)
+
+```bash
+osmosisd tx authz grant osmo18s5lynnmx37hq4wlrw9gdn68sg2uxp5rgk26vv send --spend-limit=10000factory/osmo1cyyzpxplxdzkeea7kwsydadg87357qnahakaks/mydenom --from lo-test1 --keyring-backend test --chain-id localosmosis -b=block
+```
+
+##### As Generic Authorication
+
+```bash
+osmosisd tx authz grant osmo18s5lynnmx37hq4wlrw9gdn68sg2uxp5rgk26vv generic --msg-type /cosmos.bank.v1beta1.MsgSend --from lo-test1 --keyring-backend test --chain-id localosmosis -b=block
 ```
 
 ### Mint as Granter

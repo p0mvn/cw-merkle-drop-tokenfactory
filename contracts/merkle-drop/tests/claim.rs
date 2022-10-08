@@ -3,7 +3,7 @@ use cosmwasm_std::{Coin, Uint128};
 use merkle_drop::msg::ExecuteMsg;
 use osmosis_testing::{
     cosmrs::proto::cosmos::bank::v1beta1::{QueryBalanceRequest, QueryBalanceResponse},
-    Account, Module, Runner, Wasm,
+    Module, Runner, Wasm,
 };
 use test_env::*;
 
@@ -17,26 +17,6 @@ test_claim!(
     proof: String::from(VALID_PROOF_STR),
     amount: Uint128::from(1421901 as u128)
 );
-
-// TODO:
-// tests:
-// subdenom does not exist in store / (set_denom is not called prior to claim)
-// tokenfactory denom does not exist
-
-// test_set_route!(
-//     set_initial_route_by_non_owner
-//     should failed_with "Unauthorized: execute wasm contract failed",
-
-//     sender = NonOwner,
-//     msg = ExecuteMsg::SetRoute {
-//         input_denom: "uosmo".to_string(),
-//         output_denom: "uion".to_string(),
-//         pool_route: vec![SwapAmountInRoute {
-//             pool_id: 1,
-//             token_out_denom: "uion".to_string(),
-//         }],
-//     }
-// );
 
 // ======= helpers ========
 
@@ -53,12 +33,14 @@ macro_rules! test_claim {
 fn test_claim_success_case(proof: String, amount: Uint128) {
     let test_env = TestEnv::new();
 
-    test_env.execute_msg_grant();
+    test_env.execute_msg_grant_mint();
+    test_env.execute_msg_grant_bank_send();
 
     let TestEnv {
         app,
         contract_address,
         owner,
+        full_denom,
     } = test_env;
 
     let set_subdenom_msg = ExecuteMsg::SetSubDenom {
@@ -86,8 +68,6 @@ fn test_claim_success_case(proof: String, amount: Uint128) {
     // check if execution succeeded
     assert!(res.is_ok(), "{:?}", res.unwrap_err());
 
-    let full_denom = format!("factory/{}/{}", owner.address(), VALID_SUBDENOM);
-
     let balances_query = QueryBalanceRequest {
         denom: full_denom.clone(),
         address: claimer_addr.clone(),
@@ -106,49 +86,4 @@ fn test_claim_success_case(proof: String, amount: Uint128) {
 
     assert_eq!(full_denom, balance.denom);
     assert_eq!(amount, actual_amount);
-
-    // check if previously set route can be queried correctly
-    match msg {
-        ExecuteMsg::Claim { proof, amount, .. } => {
-            // validate that minted and sent to claimer
-        }
-        _ => {
-            panic!("ExecuteMsg must be `SetRoute`");
-        }
-    }
 }
-
-// fn test_set_route_failed_case(sender: Sender, msg: ExecuteMsg, expected_error: &str) {
-//     let TestEnv {
-//         app,
-//         contract_address,
-//         owner,
-//     } = TestEnv::new();
-//     let wasm = Wasm::new(&app);
-
-//     let sender = match sender {
-//         Sender::Owner => owner,
-//         Sender::NonOwner => {
-//             let initial_balance = [
-//                 Coin::new(1_000_000_000_000, "uosmo"),
-//                 Coin::new(1_000_000_000_000, "uion"),
-//                 Coin::new(1_000_000_000_000, "stake"),
-//             ];
-//             app.init_account(&initial_balance).unwrap()
-//         }
-//     };
-
-//     let res = wasm.execute::<ExecuteMsg>(&contract_address, &msg, &[], &sender);
-//     let err = res.unwrap_err();
-
-//     // assert on error message
-//     if let RunnerError::ExecuteError { msg } = &err {
-//         let expected_err = &format!(
-//             "failed to execute message; message index: 0: {}",
-//             expected_error
-//         );
-//         assert_eq!(msg, expected_err);
-//     } else {
-//         panic!("unexpected error: {:?}", err);
-//     }
-// }

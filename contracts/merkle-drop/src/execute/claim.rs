@@ -1,6 +1,95 @@
+use cosmwasm_std::{DepsMut, Env,Response, SubMsg, Uint128};
 use merkle::{hash::Hash, proof::Proof};
+use osmosis_std::shim::Any;
+use osmosis_std::types::cosmos::authz::v1beta1::MsgExec;
+use osmosis_std::types::cosmos::base::v1beta1;
+use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgMint, TokenfactoryQuerier};
 
-use crate::ContractError;
+use crate::error::ContractError;
+use crate::reply::AUTHZ_EXEC_MINT_MSG_ID;
+use crate::state::{MintReplyState, CLAIMED_ADDRESSES, CONFIG, REPLY_STATE, SUBDENOM};
+
+pub fn claim(
+    deps: DepsMut,
+    env: Env,
+    proof_str: String,
+    amount: Uint128,
+    claimer_addr: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage).unwrap();
+
+    // TODO: validate claimer_addr is an actual account
+
+    let claim = format!("{}{}", claimer_addr, amount.to_string());
+
+    let claim_check = CLAIMED_ADDRESSES.may_load(deps.storage, &claim)?;
+    if claim_check.is_some() {
+        return Err(ContractError::AlreadyClaimed {
+            claim: claim.clone(),
+        });
+    }
+
+    deps.api
+        .debug(&format!("merkle_root {0}", &config.merkle_root));
+
+    deps.api.debug(&format!("proof_str {0}", &proof_str));
+
+    deps.api.debug(&format!("claim {0}", &claim));
+
+    verify_proof(&config.merkle_root, &proof_str, &claim)?;
+
+    deps.api.debug(&"validation passed");
+
+    let subdenom = SUBDENOM.load(deps.storage)?;
+
+    let full_denom = format!("factory/{}/{}", config.owner, subdenom);
+    deps.api
+        .debug(&format!("claim full_denom: claim end: {}", full_denom));
+
+    let tf_querier = TokenfactoryQuerier::new(&deps.querier);
+    let admin = tf_querier
+        .denom_authority_metadata(full_denom.clone())?
+        .authority_metadata
+        .unwrap()
+        .admin;
+    deps.api.debug(&format!("denom admin = {admin:?}"));
+
+    let mint_msg_res = MsgMint {
+        sender: config.owner.to_string(),
+        amount: Some(v1beta1::Coin {
+            denom: full_denom.clone(),
+            amount: amount.to_string(),
+        }),
+    };
+
+    let mint_msg_binary: cosmwasm_std::Binary = mint_msg_res.into();
+
+    let mint_msg_any = Any {
+        type_url: MsgMint::TYPE_URL.to_string(),
+        value: mint_msg_binary.to_vec(),
+    };
+
+    let exec_msg = MsgExec {
+        grantee: env.contract.address.to_string(),
+        msgs: vec![mint_msg_any],
+    };
+
+    REPLY_STATE.save(
+        deps.storage,
+        AUTHZ_EXEC_MINT_MSG_ID,
+        &MintReplyState {
+            claimer_addr: claimer_addr,
+            amount: amount,
+            denom: full_denom,
+        },
+    )?;
+
+    deps.api.debug(&"claim end");
+
+    Ok(Response::new()
+        .add_attribute("action", "claim")
+        .add_submessage(SubMsg::reply_on_success(exec_msg, AUTHZ_EXEC_MINT_MSG_ID)))
+}
 
 pub fn verify_proof(
     merkle_root: &String,

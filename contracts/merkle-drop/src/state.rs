@@ -23,4 +23,4 @@ pub const SUBDENOM: Item<String> = Item::new("subdenom");
 pub const CLAIMED_ADDRESSES: Map<&str, bool> = Map::new("claimed");
 
 // MINT_REPLY_STATE persists data from tf mint message creation until the reply receipt.
-pub const MINT_REPLY_STATE: Map<u64, MintReplyState> = Map::new("mint_reply_state");
+pub const REPLY_STATE: Map<u64, MintReplyState> = Map::new("mint_reply_state");
