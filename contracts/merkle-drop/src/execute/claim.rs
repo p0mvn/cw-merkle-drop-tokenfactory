@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env,Response, SubMsg, Uint128};
+use cosmwasm_std::{DepsMut, Env, Response, SubMsg, Uint128};
 use merkle::{hash::Hash, proof::Proof};
 use osmosis_std::shim::Any;
 use osmosis_std::types::cosmos::authz::v1beta1::MsgExec;

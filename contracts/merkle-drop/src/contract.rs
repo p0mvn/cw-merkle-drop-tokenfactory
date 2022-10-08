@@ -8,7 +8,9 @@ use crate::error::ContractError;
 use crate::execute::claim::claim;
 use crate::execute::set_subdenom::set_subdenom;
 use crate::msg::{ExecuteMsg, GetRootResponse, GetSubDenomResponse, InstantiateMsg, QueryMsg};
-use crate::reply::{handle_mint_reply, AUTHZ_EXEC_SEND_MSG_ID, handle_send_reply, AUTHZ_EXEC_MINT_MSG_ID};
+use crate::reply::{
+    handle_mint_reply, handle_send_reply, AUTHZ_EXEC_MINT_MSG_ID, AUTHZ_EXEC_SEND_MSG_ID,
+};
 use crate::state::{Config, CONFIG, SUBDENOM};
 
 // version info for migration info
@@ -47,7 +49,7 @@ pub fn execute(
             proof,
             amount,
             claimer_addr,
-        } => claim(deps, env,  proof, amount, claimer_addr),
+        } => claim(deps, env, proof, amount, claimer_addr),
     }
 }
 
@@ -57,9 +59,9 @@ pub fn execute(
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     deps.api.debug(&"reply reached");
     if msg.id == AUTHZ_EXEC_MINT_MSG_ID {
-        return handle_mint_reply(deps, msg, env.contract.address.to_string())
+        return handle_mint_reply(deps, msg, env.contract.address.to_string());
     } else if msg.id == AUTHZ_EXEC_SEND_MSG_ID {
-        return handle_send_reply(deps, msg)
+        return handle_send_reply(deps, msg);
     }
     Err(ContractError::UnknownReplyId { reply_id: msg.id })
 }

@@ -1,19 +1,24 @@
-use cosmwasm_std::{DepsMut, Reply, Response, SubMsgResponse, SubMsgResult, SubMsg};
-use osmosis_std::types::cosmos::base::v1beta1::Coin;
-use osmosis_std::types::{cosmos::authz::v1beta1::MsgExec};
-use osmosis_std::types::cosmos::bank::v1beta1::MsgSend;
+use cosmwasm_std::{DepsMut, Reply, Response, SubMsg, SubMsgResponse, SubMsgResult};
 use osmosis_std::shim::Any;
+use osmosis_std::types::cosmos::authz::v1beta1::MsgExec;
+use osmosis_std::types::cosmos::bank::v1beta1::MsgSend;
+use osmosis_std::types::cosmos::base::v1beta1::Coin;
 
 use crate::state::CONFIG;
 use crate::{
+    execute::set_subdenom::BANK_SEND_TYPE_URL,
     state::{CLAIMED_ADDRESSES, REPLY_STATE},
-    ContractError, execute::set_subdenom::BANK_SEND_TYPE_URL,
+    ContractError,
 };
 
 pub const AUTHZ_EXEC_MINT_MSG_ID: u64 = 1;
 pub const AUTHZ_EXEC_SEND_MSG_ID: u64 = 2;
 
-pub fn handle_mint_reply(deps: DepsMut, msg: Reply, contract_address: String) -> Result<Response, ContractError> {
+pub fn handle_mint_reply(
+    deps: DepsMut,
+    msg: Reply,
+    contract_address: String,
+) -> Result<Response, ContractError> {
     deps.api.debug(&"mint reply reached");
 
     match msg.result {
@@ -24,10 +29,13 @@ pub fn handle_mint_reply(deps: DepsMut, msg: Reply, contract_address: String) ->
 
             let owner = CONFIG.load(deps.storage)?.owner;
 
-            let msg_send = MsgSend{
+            let msg_send = MsgSend {
                 from_address: owner.to_string(),
                 to_address: mint_reply_state.claimer_addr,
-                amount: vec![Coin{ denom: mint_reply_state.denom, amount: mint_reply_state.amount.to_string() }],
+                amount: vec![Coin {
+                    denom: mint_reply_state.denom,
+                    amount: mint_reply_state.amount.to_string(),
+                }],
             };
 
             let msg_send_binary: cosmwasm_std::Binary = msg_send.into();
@@ -36,7 +44,7 @@ pub fn handle_mint_reply(deps: DepsMut, msg: Reply, contract_address: String) ->
                 type_url: String::from(BANK_SEND_TYPE_URL),
                 value: msg_send_binary.to_vec(),
             };
-        
+
             let exec_msg = MsgExec {
                 grantee: contract_address,
                 msgs: vec![msg_send_any],
@@ -72,8 +80,7 @@ pub fn handle_send_reply(deps: DepsMut, msg: Reply) -> Result<Response, Contract
                 .add_attribute("reply", "send")
                 .add_attribute("merkle-drop-denom", mint_reply_state.denom)
                 .add_attribute("merkle-drop-amount", mint_reply_state.amount.to_string())
-                .add_attribute("merkle-drop-receiver", mint_reply_state.claimer_addr)
-            );
+                .add_attribute("merkle-drop-receiver", mint_reply_state.claimer_addr));
         }
         SubMsgResult::Err(e) => {
             deps.api.debug(&e);
