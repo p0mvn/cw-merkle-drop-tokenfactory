@@ -13,7 +13,7 @@ pub fn build_leaf_level<T: AsRef<[u8]>>(items: &[T]) -> Vec<hash::Hash> {
     // when finding proofs.
     pdqsort::sort_by(&mut nodes, |a, b| a.cmp(b));
 
-    return nodes;
+    nodes
 }
 
 // build_branch_levels builds branch levels from the give leaf nodes.
@@ -58,7 +58,7 @@ pub fn get_next_level_length(level_len: u128) -> u128 {
 fn calculate_tree_capacity<T>(items: &[T]) -> u128 {
     let leaves_count = items.len() as u128;
     let branch_node_count = round_up_power_of_two(items.len() as u128);
-    return leaves_count + branch_node_count;
+    leaves_count + branch_node_count
 }
 
 /// round_up_power_of_two returns the next power of two

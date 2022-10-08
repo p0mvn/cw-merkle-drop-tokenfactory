@@ -1,7 +1,7 @@
 use crate::hash;
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Entry {
     pub is_left_sibling: bool,
     pub hash: hash::Hash,
@@ -9,11 +9,10 @@ pub struct Entry {
 
 impl Entry {
     pub fn new(is_left_sibling: bool, hash: hash::Hash) -> Self {
-        let entry = Entry {
+        Entry {
             is_left_sibling: is_left_sibling,
             hash: hash,
-        };
-        entry
+        }
     }
 }
 
@@ -23,7 +22,7 @@ pub struct Proof(Vec<Entry>);
 impl Proof {
     pub fn push(&mut self, is_left_sibling: bool, hash: hash::Hash) {
         self.0.push(Entry {
-            is_left_sibling: is_left_sibling,
+            is_left_sibling,
             hash: hash,
         })
     }
@@ -44,15 +43,15 @@ impl Proof {
             return false;
         }
 
-        return result.unwrap().eq(root);
+        result.unwrap().eq(root)
     }
 
     pub fn get_entry_at(&self, index: u128) -> &Entry {
-        return &self.0[index as usize];
+        &self.0[index as usize]
     }
 
     pub fn get_num_entries(&self) -> u128 {
-        return self.0.len() as u128;
+        self.0.len() as u128
     }
 }
 

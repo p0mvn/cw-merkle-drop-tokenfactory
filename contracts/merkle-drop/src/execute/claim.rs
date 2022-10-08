@@ -20,13 +20,11 @@ pub fn claim(
 
     // TODO: validate claimer_addr is an actual account
 
-    let claim = format!("{}{}", claimer_addr, amount.to_string());
+    let claim = format!("{}{}", claimer_addr, amount);
 
     let claim_check = CLAIMED_ADDRESSES.may_load(deps.storage, &claim)?;
     if claim_check.is_some() {
-        return Err(ContractError::AlreadyClaimed {
-            claim: claim.clone(),
-        });
+        return Err(ContractError::AlreadyClaimed { claim });
     }
 
     deps.api
@@ -36,9 +34,9 @@ pub fn claim(
 
     deps.api.debug(&format!("claim {0}", &claim));
 
-    verify_proof(&config.merkle_root, &proof_str, &claim)?;
+    verify_proof(&config.merkle_root, &proof_str, claim)?;
 
-    deps.api.debug(&"validation passed");
+    deps.api.debug("validation passed");
 
     let subdenom = SUBDENOM.load(deps.storage)?;
 
@@ -78,13 +76,13 @@ pub fn claim(
         deps.storage,
         AUTHZ_EXEC_MINT_MSG_ID,
         &MintReplyState {
-            claimer_addr: claimer_addr,
-            amount: amount,
+            claimer_addr,
+            amount,
             denom: full_denom,
         },
     )?;
 
-    deps.api.debug(&"claim end");
+    deps.api.debug("claim end");
 
     Ok(Response::new()
         .add_attribute("action", "claim")
@@ -93,8 +91,8 @@ pub fn claim(
 
 pub fn verify_proof(
     merkle_root: &String,
-    proof_str: &String,
-    to_verify: &String,
+    proof_str: &str,
+    to_verify: String,
 ) -> Result<(), ContractError> {
     let proof: Proof = serde_json_wasm::from_str(proof_str).unwrap();
     let root = match base64::decode(merkle_root) {
@@ -108,7 +106,7 @@ pub fn verify_proof(
 
     let root_hash = Hash::from(root);
 
-    if !proof.verify(to_verify, &root_hash) {
+    if !proof.verify(&to_verify, &root_hash) {
         return Err(ContractError::FailedVerifyProof {});
     }
 
@@ -136,7 +134,7 @@ mod tests {
         verify_proof(
             &String::from(TEST_ROOT),
             &String::from(VALID_PROOF_STR),
-            &String::from(TO_VERIFY_VALID),
+            String::from(TO_VERIFY_VALID),
         )
         .unwrap();
     }
@@ -146,7 +144,7 @@ mod tests {
         verify_proof(
             &String::from(TEST_ROOT2_ADDR_AMOUNT),
             &String::from(VALID_PROOF_STR2_ADDR_AMOUNT),
-            &String::from(TO_VERIFY_VALID2_ADDR_AMOUNT),
+            String::from(TO_VERIFY_VALID2_ADDR_AMOUNT),
         )
         .unwrap();
     }
@@ -156,7 +154,7 @@ mod tests {
         verify_proof(
             &String::from("this is garbage"),
             &String::from(VALID_PROOF_STR),
-            &String::from(TO_VERIFY_VALID),
+            String::from(TO_VERIFY_VALID),
         )
         .unwrap_err();
     }
@@ -166,7 +164,7 @@ mod tests {
         verify_proof(
             &String::from(TEST_ROOT),
             &String::from(INVALID_PROOF_STR),
-            &String::from(TO_VERIFY_VALID),
+            String::from(TO_VERIFY_VALID),
         )
         .unwrap_err();
     }

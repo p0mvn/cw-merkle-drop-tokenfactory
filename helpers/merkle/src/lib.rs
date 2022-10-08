@@ -11,7 +11,7 @@ pub struct Tree {
 
 impl Tree {
     pub fn new<T: AsRef<[u8]>>(items: &[T]) -> Self {
-        if items.len() == 0 {
+        if items.is_empty() {
             return Tree {
                 leaf_count: 0,
                 nodes: Vec::<hash::Hash>::new(),
@@ -23,11 +23,10 @@ impl Tree {
 
         builder::build_branch_levels(&mut nodes);
 
-        let mt = Tree {
-            leaf_count: leaf_count,
+        Tree {
+            leaf_count,
             nodes: nodes,
-        };
-        mt
+        }
     }
 
     pub fn get_root(&self) -> Option<hash::Hash> {
@@ -35,8 +34,7 @@ impl Tree {
         if self.leaf_count == 0 {
             return None;
         }
-        let root_copy = self.nodes[node_count - 1].clone();
-        Some(root_copy)
+        Some(self.nodes[node_count - 1])
     }
 
     pub fn find_proof<T: AsRef<[u8]>>(&self, item: &T) -> Option<proof::Proof> {
@@ -48,15 +46,9 @@ impl Tree {
         let hash_to_search_for = hash::leaf(item_ref);
 
         // binary search leaves
-        let search_result =
-            binary_search::search(&self.nodes, self.leaf_count, &hash_to_search_for);
-        if search_result.is_none() {
-            return None;
-        }
+        let proof_index = binary_search::search(&self.nodes, self.leaf_count, &hash_to_search_for)?;
 
         let mut proof = proof::Proof::default();
-
-        let proof_index = search_result.unwrap();
 
         let mut level_length = self.leaf_count;
         let mut level_start = 0;
@@ -83,7 +75,7 @@ impl Tree {
 
             level_start += level_length;
             level_length = builder::get_next_level_length(level_length);
-            current_index = current_index / 2;
+            current_index /= 2;
         }
 
         Some(proof)
@@ -91,7 +83,7 @@ impl Tree {
 
     #[allow(dead_code)]
     fn get_node_count(&self) -> u128 {
-        return self.nodes.len() as u128;
+        self.nodes.len() as u128
     }
 
     #[allow(dead_code)]
@@ -103,7 +95,7 @@ impl Tree {
                 self.get_node_count()
             ));
         }
-        return Ok(self.leaf_count);
+        Ok(self.leaf_count)
     }
 
     #[allow(dead_code)]
@@ -115,7 +107,7 @@ impl Tree {
                 self.get_node_count()
             ));
         }
-        return Ok(self.nodes[index as usize]);
+        Ok(self.nodes[index as usize])
     }
 }
 

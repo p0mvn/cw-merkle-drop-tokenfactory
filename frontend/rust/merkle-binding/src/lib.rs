@@ -27,9 +27,9 @@ extern "C" {
     fn log_many(a: &str, b: &str);
 }
 
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
+// macro_rules! console_log {
+//     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+// }
 
 #[wasm_bindgen]
 extern "C" {

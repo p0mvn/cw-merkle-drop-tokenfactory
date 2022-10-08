@@ -19,11 +19,11 @@ pub fn handle_mint_reply(
     msg: Reply,
     contract_address: String,
 ) -> Result<Response, ContractError> {
-    deps.api.debug(&"mint reply reached");
+    deps.api.debug("mint reply reached");
 
     match msg.result {
         SubMsgResult::Ok(SubMsgResponse { .. }) => {
-            deps.api.debug(&"mint reply parsing response");
+            deps.api.debug("mint reply parsing response");
 
             let mint_reply_state = REPLY_STATE.load(deps.storage, AUTHZ_EXEC_MINT_MSG_ID)?;
 
@@ -63,11 +63,11 @@ pub fn handle_mint_reply(
 }
 
 pub fn handle_send_reply(deps: DepsMut, msg: Reply) -> Result<Response, ContractError> {
-    deps.api.debug(&"send reply reached");
+    deps.api.debug("send reply reached");
 
     match msg.result {
         SubMsgResult::Ok(SubMsgResponse { .. }) => {
-            deps.api.debug(&"send reply parsing response");
+            deps.api.debug("send reply parsing response");
 
             let mint_reply_state = REPLY_STATE.load(deps.storage, AUTHZ_EXEC_MINT_MSG_ID)?;
 

@@ -57,7 +57,7 @@ pub fn execute(
 /// For more info on submessage and reply, see https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#submessages
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    deps.api.debug(&"reply reached");
+    deps.api.debug("reply reached");
     if msg.id == AUTHZ_EXEC_MINT_MSG_ID {
         return handle_mint_reply(deps, msg, env.contract.address.to_string());
     } else if msg.id == AUTHZ_EXEC_SEND_MSG_ID {
@@ -87,7 +87,7 @@ fn query_subdenom(deps: Deps) -> StdResult<GetSubDenomResponse> {
     deps.api
         .debug(&format!("returning subdenom {0}", &subdenom));
 
-    Ok(GetSubDenomResponse { subdenom: subdenom })
+    Ok(GetSubDenomResponse { subdenom })
 }
 
 #[cfg(test)]

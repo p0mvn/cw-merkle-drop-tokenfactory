@@ -86,7 +86,7 @@ fn validate_grant(
         Option::None,
     )?;
 
-    if grants_response.grants.len() == 0 {
+    if grants_response.grants.is_empty() {
         // TODO: format addresses
         return Err(ContractError::NoAuthZMintGrant {});
     }

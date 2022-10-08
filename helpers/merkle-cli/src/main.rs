@@ -110,9 +110,9 @@ fn generate_proof_cmd(
 fn verify_proof_cmd(
     root: &String,
     proof_path: std::path::PathBuf,
-    to_verify: &String,
+    to_verify: String,
 ) -> Result<(), Box<dyn Error>> {
-    let data = fs::read_to_string(proof_path.to_path_buf())?;
+    let data = fs::read_to_string(&proof_path)?;
 
     let is_valid = controller::verify_proof(root, &data, to_verify)?;
 
@@ -181,7 +181,7 @@ fn main() {
             proof_path,
             to_verify,
         }) => {
-            if root.len() == 0 {
+            if root.is_empty() {
                 eprintln!("root was empty, please provide the Merkle root hash base16 encoded");
                 process::exit(1);
             }
@@ -190,13 +190,15 @@ fn main() {
                 process::exit(1);
             }
 
-            if let Err(err) = verify_proof_cmd(root, proof_path.to_path_buf(), to_verify) {
+            if let Err(err) =
+                verify_proof_cmd(root, proof_path.to_path_buf(), to_verify.to_string())
+            {
                 eprintln!("error verifyin merkle proof: {}", err);
                 process::exit(1);
             }
         }
         Some(Commands::Hash { data }) => {
-            if data.len() == 0 {
+            if data.is_empty() {
                 eprintln!("data was empty, please provide something to hash");
                 process::exit(1);
             }
