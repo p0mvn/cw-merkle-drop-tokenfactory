@@ -23,7 +23,8 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(GetRootResponse)]
     GetRoot {},
-    #[returns(GetSubDenomResponse)]
+
+    #[returns(GetSubdenomResponse)]
     GetSubdenom {},
 }
 
@@ -33,6 +34,6 @@ pub struct GetRootResponse {
 }
 
 #[cw_serde]
-pub struct GetSubDenomResponse {
+pub struct GetSubdenomResponse {
     pub subdenom: String,
 }

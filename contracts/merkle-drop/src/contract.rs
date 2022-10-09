@@ -7,7 +7,7 @@ use cw2::set_contract_version;
 use crate::error::ContractError;
 use crate::execute::claim::claim;
 use crate::execute::set_subdenom::set_subdenom;
-use crate::msg::{ExecuteMsg, GetRootResponse, GetSubDenomResponse, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, GetRootResponse, GetSubdenomResponse, InstantiateMsg, QueryMsg};
 use crate::reply::{
     handle_mint_reply, handle_send_reply, AUTHZ_EXEC_MINT_MSG_ID, AUTHZ_EXEC_SEND_MSG_ID,
 };
@@ -81,13 +81,13 @@ fn query_root(deps: Deps) -> StdResult<GetRootResponse> {
     })
 }
 
-fn query_subdenom(deps: Deps) -> StdResult<GetSubDenomResponse> {
+fn query_subdenom(deps: Deps) -> StdResult<GetSubdenomResponse> {
     let subdenom = SUBDENOM.load(deps.storage)?;
 
     deps.api
         .debug(&format!("returning subdenom {0}", &subdenom));
 
-    Ok(GetSubDenomResponse { subdenom })
+    Ok(GetSubdenomResponse { subdenom })
 }
 
 #[cfg(test)]

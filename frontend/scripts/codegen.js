@@ -1,11 +1,11 @@
 const { join, resolve }  = require('path');
 const codegen = require('@cosmwasm/ts-codegen').default;
 
-const contractsDir = resolve(join(__dirname, '/../schemas'));
+const contractsDir = resolve(join(__dirname, '/../../contracts'));
 const contracts = [
   {
-    name: 'HackCw20',
-    dir: join(contractsDir, 'cw20-base')
+    name: 'MerkleDrop',
+    dir: join(contractsDir, 'merkle-drop/schema')
   }
 ];
 

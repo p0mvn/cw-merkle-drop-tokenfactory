@@ -4,7 +4,7 @@ import { assets } from 'chain-registry';
 import { AssetList, Asset } from '@chain-registry/types';
 
 // import cosmwasm client generated with cosmwasm-ts-codegen
-import { HackCw20QueryClient } from '../codegen/HackCw20.client';
+import { MerkleDropQueryClient } from '../codegen/MerkleDrop.client';
 
 import {
   Box,
@@ -37,10 +37,10 @@ const library = {
   href: 'https://github.com/osmosis-labs/osmojs'
 };
 
-// const chainName = 'osmosis';
-const chainName = 'osmosistestnet';
+const chainName = 'Local Osmosis';
 const chainassets: AssetList = assets.find(
-  (chain) => chain.chain_name === chainName
+  // N.B. we do not provide a separate asset list for LocalOsmosis
+  (chain) => chain.chain_name === "osmosis"
 ) as AssetList;
 const coin: Asset = chainassets.assets.find(
   (asset) => asset.base === 'uosmo'
@@ -55,45 +55,61 @@ export default function Claim() {
     address,
     setCurrentChain,
     currentWallet,
-    walletStatus
+    walletStatus,
+    connect,
   } = useWallet();
 
   useEffect(() => {
     setCurrentChain(chainName);
+
+    const fn = async () => {
+        await connect();
+        console.log("connected")
+    }
+
+    fn()
   }, [chainName]);
 
   const color = useColorModeValue('primary.500', 'primary.200');
 
+  
+
   // get cw20 balance
-  const [cw20Client, setCw20Client] = useState<HackCw20QueryClient | null>(
+  const [merkleDropClient, setMerkleDropClient] = useState<MerkleDropQueryClient | null>(
     null
   );
   useEffect(() => {
     getCosmWasmClient().then((cosmwasmClient) => {
-      if (!cosmwasmClient || !address) {
-        console.error('stargateClient undefined or address undefined.');
+      if (!cosmwasmClient) {
+        console.error('cosmwasmClient undefined');
         return;
       }
 
-      setCw20Client(
-        new HackCw20QueryClient(
+      if (!address) {
+        console.error('address undefined');
+        return;
+      }
+
+      setMerkleDropClient(
+        new MerkleDropQueryClient(
           cosmwasmClient,
-          'osmo1y0ywcujptlmnx4fgstlqfp7nftc8w5qndsfds9wxwtm0ltjpzp4qdj09j8'
+          'oosmo14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sq2r9g9'
         )
       );
     });
   }, [address, getCosmWasmClient]);
-  const [cw20Bal, setCw20Bal] = useState<string | null>(null);
+  const [root, setRoot] = useState<string | null>(null);
   useEffect(() => {
-    if (cw20Client && address) {
-      cw20Client
-        .balance({
-          // TODO: replace with `address` !!!
-          address: 'osmo10vcqfvecwmvfr46cn0ju024xz7khutjtdsg5ga'
-        })
-        .then((b) => setCw20Bal(b.balance));
+    async function getRoot() {
+        if (merkleDropClient && address) {
+            let response = await merkleDropClient.getRoot();
+
+            setRoot(response.root);
+        }
     }
-  }, [cw20Client, address]);
+
+    getRoot()
+  }, [merkleDropClient, address]);
 
   return (
 	<Layout>
@@ -145,10 +161,8 @@ export default function Claim() {
 				>Claim</Button>}
 		</GridItem>
 		<GridItem>
-			HackCW20 Balance:{' '}
-				{walletStatus === WalletStatus.Disconnected
-				? 'Connect wallet!'
-				: cw20Bal ?? 'loading...'}
+			Merkle Root:{' '}
+				{root ? root :'loading...'}
 		</GridItem>
 		</Grid>
 		</Container>

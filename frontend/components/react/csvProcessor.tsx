@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useWallet } from '@cosmos-kit/react';
 import init, { wasm_gets, wasm_sends} from "stack"
 import { cosmos } from "osmojs";
+import { StdFee } from "@cosmjs/stargate";
 
 export default function CsvProcessor() {
 	const [file, setFile] = useState();
@@ -34,6 +35,8 @@ export default function CsvProcessor() {
         });
   
         const fee: StdFee = { amount: [ { denom: 'uatom', amount: '864' } ], gas: '86364' };
+
+        const memo = "";
   
         await stargateClient.signAndBroadcast(address, [msg], fee, memo);
       }

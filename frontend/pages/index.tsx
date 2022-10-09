@@ -2,9 +2,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { useWallet } from '@cosmos-kit/react';
 import { assets } from 'chain-registry';
 import { AssetList, Asset } from '@chain-registry/types';
-
-// import cosmwasm client generated with cosmwasm-ts-codegen
-import { HackCw20QueryClient } from '../codegen/HackCw20.client';
 import React, { ReactNode } from 'react';
 
 import {

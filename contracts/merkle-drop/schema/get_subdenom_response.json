@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GetSubdenomResponse",
+  "type": "object",
+  "required": [
+    "subdenom"
+  ],
+  "properties": {
+    "subdenom": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

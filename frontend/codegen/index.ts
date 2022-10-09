@@ -4,10 +4,10 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-import * as _0 from "./HackCw20.types";
-import * as _1 from "./HackCw20.client";
+import * as _0 from "./MerkleDrop.types";
+import * as _1 from "./MerkleDrop.client";
 export namespace contracts {
-  export const HackCw20 = { ..._0,
+  export const MerkleDrop = { ..._0,
     ..._1
   };
 }

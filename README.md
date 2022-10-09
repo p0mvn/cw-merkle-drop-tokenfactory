@@ -64,8 +64,26 @@ cat ~/.osmosisd/airdrop.csv
 
 ### Deploy and Instantiate
 
+#### Beaker
+
 ```bash
 beaker wasm deploy merkle-drop --signer-account test1 --no-wasm-opt --raw '{ "merkle_root": "1V0YcwzXWtB+iuOTob6juiNliUmB278xZIKMnzwjqOU=" }' --label 1
+```
+
+#### Manual
+
+```bash
+# Store Code
+TX=$(osmosisd tx wasm store target/wasm32-unknown-unknown/release/merkle_drop.wasm --from lo-test1 --keyring-backend test --chain-id=localosmosis --gas-prices 0.1uosmo --gas auto --gas-adjustment 1.3 -b block --output json -y | jq -r '.txhash')
+CODE_ID=$(osmosisd query tx $TX --output json | jq -r '.logs[0].events[-1].attributes[0].value')
+echo "Your contract code_id is $CODE_ID"
+
+# Instantiate
+osmosisd tx wasm instantiate $CODE_ID '{ "merkle_root": "1V0YcwzXWtB+iuOTob6juiNliUmB278xZIKMnzwjqOU=" }' --from lo-test1 --keyring-backend test --amount 50000uosmo  --label "SwapRouter Contract" --from lo-test1 --chain-id localosmosis --gas-prices 0.1uosmo --gas auto --gas-adjustment 1.3 -b block -y --no-admin
+
+# Get Address
+CONTRACT_ADDR=$(osmosisd query wasm list-contract-by-code $CODE_ID --output json | jq -r '.contracts[0]')
+echo $CONTRACT_ADDR
 ```
 
 ### Create TokenFactory Denom For Testing

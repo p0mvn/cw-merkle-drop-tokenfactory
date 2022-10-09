@@ -1,5 +1,5 @@
 mod test_env;
-use merkle_drop::msg::{ExecuteMsg, GetSubDenomResponse, QueryMsg};
+use merkle_drop::msg::{ExecuteMsg, GetSubdenomResponse, QueryMsg};
 use osmosis_testing::{Module, Wasm};
 use test_env::*;
 
@@ -54,7 +54,7 @@ fn test_set_denom_success_case() {
     let get_subdenom_query = QueryMsg::GetSubdenom {};
 
     let q_res = wasm
-        .query::<QueryMsg, GetSubDenomResponse>(&contract_address, &get_subdenom_query)
+        .query::<QueryMsg, GetSubdenomResponse>(&contract_address, &get_subdenom_query)
         .unwrap();
 
     assert_eq!(q_res.subdenom, subdenom.clone());

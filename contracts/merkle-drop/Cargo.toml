@@ -49,7 +49,6 @@ schemars = "0.8.8"
 serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
 osmosis-std = {git = "https://github.com/p0mvn/osmosis-rust", branch = "roman/authz-protos3"}
-osmosis-std-derive = {git = "https://github.com/p0mvn/osmosis-rust", branch = "roman/authz-protos3"}
 merkle = { path = "../../helpers/merkle" }
 serde-json-wasm = "0.4.1"
 base64 = "0.13.0"

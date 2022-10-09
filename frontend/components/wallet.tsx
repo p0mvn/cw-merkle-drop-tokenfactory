@@ -66,6 +66,8 @@ export const WalletSection = ({ chainName }: { chainName?: ChainName }) => {
 
   const chain = chainOptions.find((c) => c.chainName === chainName);
 
+  
+
   useEffect(() => {
     setCurrentChain(chainName);
   }, [chainName, setCurrentChain]);

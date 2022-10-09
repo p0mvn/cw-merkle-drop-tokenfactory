@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use merkle_drop::msg::{ExecuteMsg, GetRootResponse, InstantiateMsg, QueryMsg};
+use merkle_drop::msg::{ExecuteMsg, GetRootResponse, GetSubdenomResponse, InstantiateMsg, QueryMsg};
 use merkle_drop::state::Config;
 
 fn main() {
@@ -17,4 +17,5 @@ fn main() {
     export_schema(&schema_for!(QueryMsg), &out_dir);
     export_schema(&schema_for!(Config), &out_dir);
     export_schema(&schema_for!(GetRootResponse), &out_dir);
+    export_schema(&schema_for!(GetSubdenomResponse), &out_dir);
 }
