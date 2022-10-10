@@ -14,3 +14,4 @@ csv = "1.1"
 serde = { version = "1", features = ["derive"] }
 wasm-bindgen = "0.2.78"
 serde-wasm-bindgen = "0.4"
+merkle = { path = "../../../helpers/merkle" }
