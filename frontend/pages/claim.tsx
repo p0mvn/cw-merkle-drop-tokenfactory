@@ -93,7 +93,7 @@ export default function Claim() {
       setMerkleDropClient(
         new MerkleDropQueryClient(
           cosmwasmClient,
-          'oosmo14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sq2r9g9'
+          'osmo14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sq2r9g9'
         )
       );
     });
