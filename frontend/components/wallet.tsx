@@ -42,31 +42,7 @@ export const WalletSection = ({ chainName }: { chainName?: ChainName }) => {
     address,
     message,
     currentWalletName,
-    chains
   } = walletManager;
-
-  const chainOptions = useMemo(
-    () =>
-      chains.map((chainRecord) => {
-        const assets = chainAssets.find(
-          (_chain) => _chain.chain_name === chainRecord.name
-        )?.assets;
-        return {
-          chainName: chainRecord.name,
-          label: chainRecord.chain.pretty_name,
-          value: chainRecord.name,
-          icon: assets
-            ? assets[0]?.logo_URIs?.svg || assets[0]?.logo_URIs?.png
-            : undefined,
-          disabled: false
-        };
-      }),
-    [chains]
-  );
-
-  const chain = chainOptions.find((c) => c.chainName === chainName);
-
-  
 
   useEffect(() => {
     setCurrentChain(chainName);
@@ -147,14 +123,6 @@ export const WalletSection = ({ chainName }: { chainName?: ChainName }) => {
         alignItems="center"
         justifyContent="center"
       >
-        {chainName && (
-          <GridItem marginBottom={'20px'}>
-            <ChainCard
-              prettyName={chain?.label || chainName}
-              icon={chain?.icon}
-            />
-          </GridItem>
-        )}
         <GridItem px={6}>
           <Stack
             justifyContent="center"

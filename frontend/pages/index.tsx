@@ -28,6 +28,7 @@ import Head from 'next/head';
 import Navbar from '../components/navbar';
 import Layout from '../components/navbar';
 import dynamic from 'next/dynamic'
+import SubdenomSetter from '../components/react/subdenom-setter';
 
 const DynamicCsvProcessor = dynamic(() => import('../components/react/csvProcessor'), {
     ssr: false,
@@ -45,6 +46,9 @@ export default function Home() {
         </Head>
         <Flex justifyContent="end" mb={4}>
         </Flex>
+        <Box textAlign="center">
+          <SubdenomSetter></SubdenomSetter>
+        </Box>
         <Box textAlign="center">
           <DynamicCsvProcessor></DynamicCsvProcessor>
         </Box>

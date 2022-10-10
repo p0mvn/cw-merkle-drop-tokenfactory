@@ -30,6 +30,7 @@ import { Product, Dependency, WalletSection, ChainCard } from '../components';
 import Head from 'next/head';
 import Navbar from '../components/navbar';
 import Layout from '../components/navbar';
+import { chainName, contractAddress } from '../config/contract';
 
 const library = {
   title: 'OsmoJS',
@@ -37,7 +38,6 @@ const library = {
   href: 'https://github.com/osmosis-labs/osmojs'
 };
 
-const chainName = 'Local Osmosis';
 const chainassets: AssetList = assets.find(
   // N.B. we do not provide a separate asset list for LocalOsmosis
   (chain) => chain.chain_name === "osmosis"
@@ -57,6 +57,7 @@ export default function Claim() {
     currentWallet,
     walletStatus,
     connect,
+    chains
   } = useWallet();
 
   useEffect(() => {
@@ -70,7 +71,24 @@ export default function Claim() {
     fn()
   }, [chainName]);
 
-  const color = useColorModeValue('primary.500', 'primary.200');
+  const chainOptions = useMemo(
+    () =>
+      chains.map((chainRecord) => {
+
+        return {
+          chainName: chainRecord.name,
+          label: chainRecord.chain.pretty_name,
+          value: chainRecord.name,
+          icon: chainassets
+            ? chainassets.assets[0]?.logo_URIs?.svg || chainassets.assets[0]?.logo_URIs?.png
+            : undefined,
+          disabled: false
+        };
+      }),
+    [chains]
+  );
+
+  const chain = chainOptions.find((c) => c.chainName === chainName);
 
   
 
@@ -93,7 +111,7 @@ export default function Claim() {
       setMerkleDropClient(
         new MerkleDropQueryClient(
           cosmwasmClient,
-          'osmo14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sq2r9g9'
+          contractAddress,
         )
       );
     });
@@ -137,7 +155,28 @@ export default function Claim() {
 			>
 			</Heading>
 		</Box>
-		<WalletSection chainName={chainName} />
+
+        <Box textAlign="center">
+        {chainName && (
+          <GridItem marginBottom={'20px'}>
+            <ChainCard
+              prettyName={chain?.label || chainName}
+              icon={chain?.icon}
+            />
+          </GridItem>
+        )}
+        </Box>
+
+        <Grid templateColumns='repeat(2, 1fr)'>
+            <GridItem>
+                <WalletSection chainName={chainName} />
+            </GridItem>
+            <GridItem>
+                Test
+            </GridItem>
+        </Grid>
+
+		
 		<Grid textAlign="center">
 		<GridItem>
 			{walletStatus === WalletStatus.Disconnected

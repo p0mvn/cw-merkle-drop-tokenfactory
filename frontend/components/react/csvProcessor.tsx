@@ -85,9 +85,6 @@ export default function CsvProcessor() {
 
 	return (
 		<Box alignContent='center'>
-            <FormControl>
-                <Button mx="4" mt="4">Upload Root</Button>
-            </FormControl>
 			<FormControl>
 				<Button mx="4" mt="4">
 					<FormLabel htmlFor='file-upload' alignContent='center' m="2">Pick a File</FormLabel>
